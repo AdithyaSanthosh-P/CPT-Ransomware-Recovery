@@ -1,0 +1,104 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+MANIFEST
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Package install artefacts ──────────────────────────────────────────────────
+src/*.egg-info/
+
+# ── Pytest / coverage ─────────────────────────────────────────────────────────
+.pytest_cache/
+.cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# ── Type checkers / linters ───────────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# ── Editors ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ── CTRR — live daemon output (never commit runtime data) ─────────────────────
+# Event traces and decision logs written by the running daemon.
+# These can be gigabytes; replay them locally, don't version them.
+var/
+/var/log/ctrr/
+/var/lib/ctrr/
+*.jsonl.gz
+
+# Snapshot directories (Btrfs or shutil mock)
+.ctrr-snapshots/
+snapshots/
+/tmp/snapshots/
+
+# Dogfood trace (W8+ background run on home dir — too large to commit)
+traces/dogfood/
+
+# ── CTRR — test corpus and VM images ──────────────────────────────────────────
+# Generated corpora used by the simulator and benign harness.
+# Re-generate from the seeded script; don't store binary blobs in git.
+corpus/
+testcorpus/
+*.img
+*.qcow2
+*.iso
+
+# Simulator ground-truth logs (large, regenerated per run)
+tools/attack_logs/
+
+# ── CTRR — experiment outputs (M6) ────────────────────────────────────────────
+# Raw per-run JSON summaries from the scenario runner.
+# Commit only the final processed tables/figures, not 100+ raw files.
+results/raw/
+results/runs/
+*.summary.json
+
+# ── CTRR — benchmark results (KEEP — these are the test log) ─────────────────
+# tests/results/bench_entropy.jsonl and bench_entropy.md ARE committed.
+# They are the empirical record of design decisions. Do not ignore them.
+!tests/results/
+!tests/results/*.jsonl
+!tests/results/*.md
+
+# ── Secrets / keys ────────────────────────────────────────────────────────────
+*.pem
+*.key
+*.p12
+*.pfx
+.env
+.env.*
+secrets/
+policy_override.yaml
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+
+#custom
+
+/docs
