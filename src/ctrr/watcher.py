@@ -191,8 +191,9 @@ class Watcher:
         while not self._stop_event.is_set():
             try:
                 raw_events = self._inotify.read(timeout=500)
-            except OSError:
-                # inotify fd was closed by stop() -- exit cleanly.
+            except (OSError, ValueError):
+                # OSError or ValueError means the inotify fd was closed by
+                # stop() while we were blocked inside read() -- exit cleanly.
                 break
 
             mono_ts = time.monotonic_ns()

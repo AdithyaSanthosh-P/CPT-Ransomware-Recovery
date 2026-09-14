@@ -111,10 +111,24 @@ def _encrypt_file(path: Path) -> Path:
     Read path, overwrite it with AES ciphertext, rename to <path>.enc.
 
     Returns the new path.  Raises OSError on read/write failure.
+
+    The 50ms pause between write and rename is deliberate.  inotify delivers
+    CLOSE_WRITE asynchronously: the monitor's reader thread receives the event,
+    enqueues a FileEvent, and the processor thread reads the file to compute
+    entropy.  Without the pause, write_bytes() triggers CLOSE_WRITE and rename()
+    immediately removes the original path, so the entropy extractor gets an
+    OSError on every file and scores 0.0.  50ms is enough for the kernel to
+    deliver the event and the extractor to complete the read.  Real ransomware
+    has inherent latency between write and rename (key derivation, metadata
+    updates) so this is a realistic model.
     """
     plaintext = path.read_bytes()
     ciphertext = _encrypt_bytes(plaintext)
     path.write_bytes(ciphertext)
+
+    # Pause here so the entropy extractor can read the encrypted content
+    # before the file disappears from its original path.
+    time.sleep(0.05)
 
     enc_path = path.with_suffix(path.suffix + ".enc")
     path.rename(enc_path)

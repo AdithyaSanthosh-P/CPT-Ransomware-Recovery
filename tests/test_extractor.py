@@ -207,19 +207,20 @@ class TestRateExtractor:
         Feeding exactly (CEILING / 2) * window_sec events at timestamp 0
         should yield score ~= 0.5.
 
-        Derivation:
-          window_sec = _RATE_WINDOW_NS / 1e9  (5 s)
-          target_rate = _RATE_CEILING_WPS / 2  (25 wps)
-          events_needed = target_rate * window_sec  (125)
-          rate = 125 / 5 = 25 wps
-          score = 25 / 50 = 0.5
+        Derivation (ceiling = _RATE_CEILING_WPS = 5.0 wps, window = 5 s):
+          window_sec    = _RATE_WINDOW_NS / 1e9  (5 s)
+          target_rate   = _RATE_CEILING_WPS / 2  (2.5 wps)
+          events_needed = target_rate * window_sec = 12  (int truncation)
+          rate          = 12 / 5 = 2.4 wps
+          score         = 2.4 / 5.0 = 0.48
+        abs tolerance is 0.03 to absorb int() truncation (12 vs 12.5 events).
         """
         window_sec = _RATE_WINDOW_NS / 1e9
-        target_count = int((_RATE_CEILING_WPS / 2) * window_sec)  # 125
+        target_count = int((_RATE_CEILING_WPS / 2) * window_sec)
         ext = RateExtractor()
         for _ in range(target_count):
             score = ext.score(make_close_write("/tmp/x", mono_ts=0))
-        assert score == pytest.approx(0.5, abs=0.01)
+        assert score == pytest.approx(0.5, abs=0.03)
 
     def test_score_capped_at_one(self):
         """Score must not exceed 1.0 regardless of how high the rate climbs."""

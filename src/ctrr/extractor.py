@@ -230,9 +230,12 @@ class EntropyExtractor:
 
 # Policy ceiling: writes per second considered fully suspicious.
 # Below this rate the score scales linearly; at or above it the score is 1.0.
-# 50 writes/sec is a conservative ceiling for legitimate interactive use;
-# ransomware typically operates at hundreds to thousands per second.
-_RATE_CEILING_WPS = 50.0
+# Demo value: 5 writes/sec.  The simulator is I/O-bound by the 50ms pause
+# between write and rename (needed so the entropy extractor can read the file
+# before it disappears from its original path).  Production value is 50 wps,
+# appropriate for real ransomware which operates at hundreds of writes per
+# second.  This constant is swept in Phase 4 experiments.
+_RATE_CEILING_WPS = 5.0
 
 # Width of the sliding window over which the rate is measured.
 _RATE_WINDOW_NS = 5_000_000_000    # 5 seconds in nanoseconds
