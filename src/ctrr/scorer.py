@@ -10,42 +10,41 @@ Architecture
 ------------
 Two stages run in sequence on every tick:
 
-  [FUSION]   Weighted sum of three sub-scores -> fused_score in [0, 1].
-             Weights are module-level policy constants that sum to 1.0, so
-             the output is guaranteed in [0, 1] without additional clamping.
-             The fuse() function is intentionally a pure function so the
-             replay engine can call it on saved trace data without needing
-             a live Scorer instance.
+  [FUSION]       Weighted sum of three sub-scores -> fused_score in [0, 1].
+                 Weights are module-level policy constants that sum to 1.0, so
+                 the output is guaranteed in [0, 1] without additional clamping.
+                 The fuse() function is intentionally a pure function so the
+                 replay engine can call it on saved trace data without needing
+                 a live Scorer instance.
 
-  [ARBITER]  Threshold comparisons + quorum gate -> ArbiterState.
-             NORMAL  : fused_score < SOFT_THRESHOLD
-             SUSPECT : fused_score >= SOFT_THRESHOLD
-             TRIGGER : fused_score >= HARD_THRESHOLD
-                       AND active_signals >= QUORUM_MIN
-             COOLDOWN: fixed period after a TRIGGER before re-arming
+  [ACCUMULATOR]  Leaky integrator that raises on each high-fused tick and
+                 decays exponentially when the fused score is low.  The arbiter
+                 acts on the accumulated value rather than the raw instantaneous
+                 score, so the TRIGGER state requires sustained anomalous
+                 activity and not just a single spike.
+
+  [ARBITER]      Threshold comparisons + quorum gate -> ArbiterState.
+                 NORMAL  : accumulator < SOFT_THRESHOLD
+                 SUSPECT : accumulator >= SOFT_THRESHOLD
+                 TRIGGER : accumulator >= ACCUMULATOR_TRIGGER_THRESHOLD
+                           AND active_signals >= QUORUM_MIN
+                 COOLDOWN: fixed period after a TRIGGER before re-arming
 
   TRIGGER is returned exactly once -- the tick on which the hard threshold
   and quorum are both crossed.  The arbiter then moves to COOLDOWN
   immediately.  The monitor acts on the returned TRIGGER state to fire the
   snapshot.
 
-Demo scope vs full system
--------------------------
-The following are deferred to the full production system (post-demo):
+  Hysteresis: the SUSPECT -> NORMAL transition requires the accumulator to
+  fall below (SOFT_THRESHOLD - HYSTERESIS_GAP), not just below SOFT_THRESHOLD.
+  This prevents rapid state flapping when the score oscillates around the
+  soft threshold boundary.
 
-  - Leaky integrator / evidence accumulator with decay lambda.  In the full
-    system the fused score feeds an accumulator; the arbiter acts on the
-    accumulated value, not the raw instantaneous score.  This makes the
-    system robust against brief spikes and provides a natural decay back to
-    NORMAL after the attack stops.
-
-  - Hysteresis on the SUSPECT -> NORMAL transition.  Without it a score
-    oscillating around the soft threshold causes rapid state flapping.
-    For the demo a simple re-crossing of SOFT_THRESHOLD is sufficient.
-
+Deferred items (post-demo)
+--------------------------
   - COOLDOWN -> ARMED distinction.  Production needs an explicit ARMED
     state before re-entering NORMAL so that a sustained attack cannot
-    prevent re-arming.  For the demo the arbiter returns directly to NORMAL
+    prevent re-arming.  The arbiter currently returns directly to NORMAL
     after the cooldown period.
 """
 
@@ -74,12 +73,13 @@ _WEIGHT_EXTENSION = 0.20
 assert abs(_WEIGHT_ENTROPY + _WEIGHT_RATE + _WEIGHT_EXTENSION - 1.0) < 1e-9, \
     "fusion weights must sum to 1.0"
 
-# Soft threshold: fused_score at or above this value moves the arbiter from
+# Soft threshold: accumulator at or above this value moves the arbiter from
 # NORMAL to SUSPECT and arms verbose logging.
 _SOFT_THRESHOLD = 0.35
 
-# Hard threshold: fused_score at or above this value, combined with quorum,
-# fires a snapshot.
+# Hard threshold: accumulator at or above this value, combined with quorum,
+# fires a snapshot.  Evaluated against the *accumulated* value so a single
+# spike in the raw fused score cannot trigger without sustained evidence.
 _HARD_THRESHOLD = 0.70
 
 # Quorum: at least this many sub-scores must be active (above the signal
@@ -93,6 +93,20 @@ _QUORUM_SIGNAL_THRESHOLD = 0.1   # threshold passed to SubScores.active_signals(
 # 30 seconds is long enough to capture all files encrypted in a typical
 # ransomware burst while short enough to re-arm if the attack resumes.
 _COOLDOWN_NS = 30_000_000_000    # 30 seconds in nanoseconds
+
+# Accumulator decay factor applied each tick when the fused score is below
+# the soft threshold.  A value of 0.85 means the accumulator loses ~15% of
+# its value per quiet tick, so it falls from 0.70 to below 0.35 in roughly
+# 6 quiet ticks.  The rise rate is (1 - decay) * fused_score added per tick.
+# Choosing decay close to 1.0 makes the system slow to react (less sensitive
+# to short bursts); closer to 0.0 makes it react to single events.
+_ACCUMULATOR_DECAY = 0.85
+
+# Hysteresis band: the SUSPECT -> NORMAL disarm requires the accumulator to
+# drop this far below SOFT_THRESHOLD before the arbiter resets.  Without
+# hysteresis, a score oscillating just above/below SOFT_THRESHOLD causes
+# rapid NORMAL/SUSPECT flapping which is noisy and hard to audit.
+_HYSTERESIS_GAP = 0.05
 
 
 # ---------------------------------------------------------------------------
@@ -155,8 +169,9 @@ class Scorer:
     def __init__(self) -> None:
         self._state         = ArbiterState.NORMAL
         self._fused_score   = 0.0
-        self._trigger_ts    = 0       # mono_ts of the most recent trigger
-        self._trigger_count = 0       # total number of triggers fired
+        self._accumulator   = 0.0   # leaky integrator value; arbiter acts on this
+        self._trigger_ts    = 0     # mono_ts of the most recent trigger
+        self._trigger_count = 0     # total number of triggers fired
 
     # ------------------------------------------------------------------
     # Public interface
@@ -181,6 +196,23 @@ class Scorer:
         """
         self._fused_score = fuse(scores)
 
+        # --- Leaky integrator update ------------------------------------------
+        # Rise: accumulator pulls toward fused_score each tick.
+        # Decay: when fused_score is below soft threshold, the accumulator bleeds
+        # down toward zero so a quiet period after an attack resets the state.
+        if self._fused_score >= _SOFT_THRESHOLD:
+            # Drive accumulator up toward 1.0 at rate (1 - decay) per tick.
+            self._accumulator = (
+                _ACCUMULATOR_DECAY * self._accumulator
+                + (1.0 - _ACCUMULATOR_DECAY) * self._fused_score
+            )
+        else:
+            # Quiet tick: accumulator decays toward zero.
+            self._accumulator *= _ACCUMULATOR_DECAY
+        # Clamp to [0, 1] to guard against floating-point drift.
+        self._accumulator = min(1.0, max(0.0, self._accumulator))
+        # --- End accumulator update -------------------------------------------
+
         if self._state == ArbiterState.COOLDOWN:
             # Re-arm once the cooldown window has elapsed.
             if mono_ts - self._trigger_ts >= _COOLDOWN_NS:
@@ -188,19 +220,19 @@ class Scorer:
             return self._state
 
         if self._state == ArbiterState.NORMAL:
-            if self._fused_score >= _SOFT_THRESHOLD:
+            if self._accumulator >= _SOFT_THRESHOLD:
                 self._state = ArbiterState.SUSPECT
             return self._state
 
         if self._state == ArbiterState.SUSPECT:
-            if self._fused_score < _SOFT_THRESHOLD:
-                # Score fell back below the soft threshold -- disarm.
-                # Production will add hysteresis here so a brief dip does
-                # not immediately disarm a sustained attack reading.
+            # Hysteresis: only disarm if the accumulator has dropped well
+            # below the soft threshold, not just marginally below it.
+            # This prevents oscillation when the score hovers at the boundary.
+            if self._accumulator < (_SOFT_THRESHOLD - _HYSTERESIS_GAP):
                 self._state = ArbiterState.NORMAL
                 return self._state
 
-            if (self._fused_score >= _HARD_THRESHOLD and
+            if (self._accumulator >= _HARD_THRESHOLD and
                     scores.active_signals(_QUORUM_SIGNAL_THRESHOLD) >= _QUORUM_MIN):
                 # Hard threshold crossed with quorum -- fire a snapshot.
                 self._trigger_ts    = mono_ts
@@ -223,6 +255,15 @@ class Scorer:
     def fused_score(self) -> float:
         """Fused score from the most recent tick, in [0, 1]."""
         return self._fused_score
+
+    @property
+    def accumulator(self) -> float:
+        """Leaky integrator value from the most recent tick, in [0, 1].
+
+        This is the value the arbiter uses for threshold comparisons, not
+        the raw fused_score.  Expose it so the telemetry layer can log both.
+        """
+        return self._accumulator
 
     @property
     def trigger_count(self) -> int:

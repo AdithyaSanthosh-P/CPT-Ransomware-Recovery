@@ -22,8 +22,10 @@ from ctrr.extractor import SubScores
 from ctrr.scorer import (
     ArbiterState,
     Scorer,
+    _ACCUMULATOR_DECAY,
     _COOLDOWN_NS,
     _HARD_THRESHOLD,
+    _HYSTERESIS_GAP,
     _QUORUM_MIN,
     _QUORUM_SIGNAL_THRESHOLD,
     _SOFT_THRESHOLD,
@@ -43,11 +45,20 @@ def scores(entropy=0.0, rate=0.0, extension=0.0) -> SubScores:
     return SubScores(entropy=entropy, rate=rate, extension=extension)
 
 
+def pump_accumulator(scorer: Scorer, s: SubScores, ticks: int, start_ts: int = 0, step_ns: int = 100_000_000) -> int:
+    """Feed `ticks` identical SubScores into the scorer and return the final mono_ts."""
+    t = start_ts
+    for _ in range(ticks):
+        t += step_ns
+        scorer.tick(s, mono_ts=t)
+    return t
+
+
 def scores_above_hard() -> SubScores:
     """
     Return a SubScores that produces a fused_score >= HARD_THRESHOLD with
     at least QUORUM_MIN signals above QUORUM_SIGNAL_THRESHOLD.
-    Used to drive the SUSPECT -> TRIGGER transition.
+    Used to drive the accumulator past the hard threshold after enough ticks.
     """
     # All three signals high enough to clear quorum and hard threshold.
     return scores(entropy=0.9, rate=0.9, extension=0.9)
@@ -69,6 +80,32 @@ def scores_above_soft() -> SubScores:
 def scores_neutral() -> SubScores:
     """All sub-scores at zero; fused_score = 0.0."""
     return scores()
+
+
+def reach_suspect(scorer: Scorer, start_ts: int = 0) -> int:
+    """Pump the scorer into SUSPECT state and return the final mono_ts used.
+
+    With decay=0.85 and fuse=0.36, the accumulator approaches 0.36 asymptotically.
+    After n ticks from 0: acc ~ 0.36 * (1 - 0.85^n).  To exceed SOFT_THRESHOLD=0.35
+    we need 0.36 * (1 - 0.85^n) > 0.35, i.e. n > log(1/36) / log(0.85) ~ 24 ticks.
+    30 ticks gives a comfortable margin.
+    """
+    return pump_accumulator(scorer, scores_above_soft(), ticks=30, start_ts=start_ts)
+
+
+def reach_trigger(scorer: Scorer, start_ts: int = 0) -> int:
+    """Pump the scorer from fresh through SUSPECT into TRIGGER; return final mono_ts."""
+    # First reach SUSPECT.
+    ts = reach_suspect(scorer, start_ts=start_ts)
+    # Then pump high scores until TRIGGER fires (accumulator crosses HARD_THRESHOLD).
+    # 40 ticks at fuse=0.9 guarantees the accumulator reaches 0.70.
+    s = scores_above_hard()
+    for _ in range(40):
+        ts += 100_000_000
+        state = scorer.tick(s, mono_ts=ts)
+        if state == ArbiterState.TRIGGER:
+            return ts
+    raise AssertionError("TRIGGER did not fire after 40 high ticks -- check thresholds")
 
 
 # ---------------------------------------------------------------------------
@@ -144,26 +181,20 @@ class TestNormalToSuspect:
     def test_score_below_soft_stays_normal(self):
         """A fused score just below SOFT_THRESHOLD must not advance to SUSPECT."""
         scorer = Scorer()
-        # Construct scores whose fused value is just below SOFT_THRESHOLD.
-        # SOFT_THRESHOLD = 0.35; set entropy alone to 0.34 / 0.45 ~ 0.755
-        # But simpler: use extension only at just below soft threshold.
-        # fuse(0, 0, ext) = 0.20 * ext.  For fuse < 0.35, ext < 1.75 -- not possible.
-        # Use entropy: 0.20 * ext: can't reach 0.35 alone.
-        # Use entropy = 0.70: fuse = 0.45 * 0.70 = 0.315 < 0.35.
+        # entropy=0.70 -> fuse=0.315 < SOFT_THRESHOLD; accumulator stays near 0.
         s = scores(entropy=0.70)
         assert fuse(s) < _SOFT_THRESHOLD
         state = scorer.tick(s, mono_ts=0)
         assert state == ArbiterState.NORMAL
 
-    def test_score_at_soft_threshold_enters_suspect(self):
+    def test_sustained_score_above_soft_enters_suspect(self):
         """
-        A fused score at or above SOFT_THRESHOLD must advance to SUSPECT.
-        scores_above_soft() produces fuse = 0.36 >= SOFT_THRESHOLD (0.35).
+        After enough ticks above SOFT_THRESHOLD the accumulator crosses
+        the soft threshold and the arbiter enters SUSPECT.
         """
         scorer = Scorer()
-        assert fuse(scores_above_soft()) >= _SOFT_THRESHOLD   # guard
-        state = scorer.tick(scores_above_soft(), mono_ts=0)
-        assert state == ArbiterState.SUSPECT
+        reach_suspect(scorer)
+        assert scorer.state == ArbiterState.SUSPECT
 
     def test_fused_score_updated_on_tick(self):
         """tick() must update the fused_score property."""
@@ -178,17 +209,32 @@ class TestNormalToSuspect:
 
 class TestSuspectToNormal:
 
-    def test_score_drop_disarms_suspect(self):
+    def test_sustained_quiet_disarms_suspect(self):
         """
-        If the fused score falls back below SOFT_THRESHOLD while in SUSPECT,
-        the arbiter must return to NORMAL.
+        After reaching SUSPECT, feeding enough quiet ticks must decay the
+        accumulator past the hysteresis band and return to NORMAL.
         """
         scorer = Scorer()
-        scorer.tick(scores_above_soft(), mono_ts=0)   # -> SUSPECT
+        ts = reach_suspect(scorer)
         assert scorer.state == ArbiterState.SUSPECT
 
-        state = scorer.tick(scores_neutral(), mono_ts=1_000_000_000)
-        assert state == ArbiterState.NORMAL
+        # Feed neutral ticks; accumulator must decay past (SOFT - HYSTERESIS_GAP).
+        ts = pump_accumulator(scorer, scores_neutral(), ticks=60, start_ts=ts)
+        assert scorer.state == ArbiterState.NORMAL
+
+    def test_single_quiet_tick_does_not_immediately_disarm(self):
+        """
+        Hysteresis: a single quiet tick from SUSPECT must not immediately
+        return to NORMAL -- the accumulator needs time to decay.
+        """
+        scorer = Scorer()
+        ts = reach_suspect(scorer)
+        assert scorer.state == ArbiterState.SUSPECT
+
+        # One neutral tick is not enough to cross the hysteresis band.
+        ts += 100_000_000
+        state = scorer.tick(scores_neutral(), mono_ts=ts)
+        assert state == ArbiterState.SUSPECT
 
 
 # ---------------------------------------------------------------------------
@@ -199,31 +245,24 @@ class TestSuspectToTrigger:
 
     def test_hard_threshold_with_quorum_triggers(self):
         """
-        A fused score at or above HARD_THRESHOLD with quorum must return
+        A sustained fused score above HARD_THRESHOLD with quorum must return
         TRIGGER and advance internally to COOLDOWN.
-
-        Setup: two ticks to reach SUSPECT, then one tick with scores_above_hard
-        to cross the hard threshold with quorum (all 3 signals active).
         """
         scorer = Scorer()
-        scorer.tick(scores_above_soft(), mono_ts=0)            # NORMAL -> SUSPECT
-        assert scorer.state == ArbiterState.SUSPECT            # guard
-        state = scorer.tick(scores_above_hard(), mono_ts=1_000_000_000)
-        assert state == ArbiterState.TRIGGER
+        reach_trigger(scorer)
+        assert scorer.trigger_count == 1
 
     def test_trigger_increments_trigger_count(self):
         scorer = Scorer()
-        scorer.tick(scores_above_soft(), mono_ts=0)            # -> SUSPECT
-        scorer.tick(scores_above_hard(), mono_ts=1_000_000_000)  # -> TRIGGER
+        reach_trigger(scorer)
         assert scorer.trigger_count == 1
 
     def test_state_after_trigger_is_cooldown(self):
         """The tick after a TRIGGER must return COOLDOWN, not TRIGGER again."""
         scorer = Scorer()
-        scorer.tick(scores_above_soft(), mono_ts=0)            # -> SUSPECT
-        scorer.tick(scores_above_hard(), mono_ts=1_000_000_000)  # returns TRIGGER
+        ts = reach_trigger(scorer)
         # Internal state is now COOLDOWN; the next tick must return COOLDOWN.
-        state = scorer.tick(scores_above_hard(), mono_ts=2_000_000_000)
+        state = scorer.tick(scores_above_hard(), mono_ts=ts + 100_000_000)
         assert state == ArbiterState.COOLDOWN
 
     def test_trigger_without_quorum_does_not_fire(self):
@@ -232,20 +271,6 @@ class TestSuspectToTrigger:
         trigger.  Only one signal is active here.
         """
         scorer = Scorer()
-        scorer.tick(scores_above_soft(), mono_ts=0)   # -> SUSPECT
-
-        # Only entropy is high; rate and extension are 0.
-        # Quorum check: active_signals(0.1) = 1, which is < QUORUM_MIN (2).
-        # Fused score = 0.45 * 1.0 = 0.45 -- below HARD_THRESHOLD (0.70) anyway.
-        # Use high enough entropy to clear hard threshold alone, if quorum were ignored.
-        # fuse(entropy=1.0, 0, 0) = 0.45 < 0.70; hard threshold not met either.
-        # So we need a case where fused >= HARD_THRESHOLD but quorum fails.
-        # fuse(e, r, 0): 0.45e + 0.35r >= 0.70.  With r=0: e >= 1.56 -- not possible.
-        # Achievable: entropy=1.0, rate=1.0, extension=0.0 -> fuse = 0.80 >= 0.70.
-        # active_signals(0.1): entropy=1.0 > 0.1, rate=1.0 > 0.1, extension=0.0 -- 2 active.
-        # That meets quorum.  To fail quorum: entropy=1.0, rate=0.0, extension=0.0
-        # -> fuse=0.45 < HARD_THRESHOLD.  Cannot isolate the quorum failure alone with
-        # default weights.  Instead test the quorum method directly on SubScores.
 
         # Verify: a SubScores with only one signal active does not meet quorum.
         s = scores(entropy=1.0, rate=0.0, extension=0.0)
@@ -253,13 +278,15 @@ class TestSuspectToTrigger:
 
     def test_direct_normal_to_trigger_not_possible(self):
         """
-        A single tick from NORMAL with a high score must pass through SUSPECT
-        first.  The arbiter must not jump directly from NORMAL to TRIGGER.
+        A single tick from NORMAL with a high score cannot reach TRIGGER.
+        The accumulator starts at 0.0 and cannot cross either SOFT_THRESHOLD
+        (0.35) or HARD_THRESHOLD (0.70) in a single tick with decay=0.85.
+        One tick at fuse=0.9: acc = (1-0.85)*0.9 = 0.135 < SOFT_THRESHOLD.
         """
         scorer = Scorer()
         state = scorer.tick(scores_above_hard(), mono_ts=0)
-        # NORMAL -> SUSPECT is the only allowed transition on this tick.
-        assert state == ArbiterState.SUSPECT
+        # Accumulator is only 0.135 after one tick -- below SOFT_THRESHOLD.
+        assert state == ArbiterState.NORMAL
         assert scorer.trigger_count == 0
 
 
@@ -272,24 +299,20 @@ class TestCooldown:
     def test_cooldown_persists_within_window(self):
         """High scores during the cooldown period must not re-trigger."""
         scorer = Scorer()
-        scorer.tick(scores_above_soft(), mono_ts=0)               # -> SUSPECT
-        scorer.tick(scores_above_hard(), mono_ts=1_000_000_000)   # returns TRIGGER
-        # Internal state is now COOLDOWN.
+        ts = reach_trigger(scorer)
 
-        # Feed high scores at T=2s -- still within 30s cooldown.
-        state = scorer.tick(scores_above_hard(), mono_ts=2_000_000_000)
+        # Feed high scores at T+100ms -- still within 30s cooldown.
+        state = scorer.tick(scores_above_hard(), mono_ts=ts + 100_000_000)
         assert state == ArbiterState.COOLDOWN
         assert scorer.trigger_count == 1    # no second trigger
 
     def test_cooldown_expires_and_returns_to_normal(self):
         """After COOLDOWN_NS nanoseconds, the arbiter must re-arm to NORMAL."""
         scorer = Scorer()
-        scorer.tick(scores_above_soft(), mono_ts=0)
-        trigger_ts = 1_000_000_000
-        scorer.tick(scores_above_hard(), mono_ts=trigger_ts)   # TRIGGER
+        ts = reach_trigger(scorer)
 
         # Feed a neutral event past the cooldown window.
-        past_cooldown = trigger_ts + _COOLDOWN_NS + 1_000_000_000
+        past_cooldown = ts + _COOLDOWN_NS + 1_000_000_000
         state = scorer.tick(scores_neutral(), mono_ts=past_cooldown)
         assert state == ArbiterState.NORMAL
 
@@ -310,9 +333,7 @@ class TestCooldown:
 
         for _ in range(1000):
             t += step
-            s = scores_above_hard() if scorer.state != ArbiterState.COOLDOWN \
-                else scores_above_hard()
-            state = scorer.tick(s, mono_ts=t)
+            state = scorer.tick(scores_above_hard(), mono_ts=t)
             if state == ArbiterState.TRIGGER:
                 trigger_times.append(t)
 
@@ -324,3 +345,76 @@ class TestCooldown:
             assert gap >= _COOLDOWN_NS, (
                 f"Two triggers {gap} ns apart -- less than cooldown {_COOLDOWN_NS} ns"
             )
+# ---------------------------------------------------------------------------
+# Accumulator and hysteresis
+# ---------------------------------------------------------------------------
+
+class TestAccumulator:
+
+    def test_initial_accumulator_is_zero(self):
+        """A freshly created Scorer must start with accumulator at 0.0."""
+        scorer = Scorer()
+        assert scorer.accumulator == 0.0
+
+    def test_accumulator_rises_on_high_ticks(self):
+        """The accumulator must increase each time fused_score >= SOFT_THRESHOLD."""
+        scorer = Scorer()
+        prev = scorer.accumulator
+        s = scores_above_soft()
+        for _ in range(5):
+            scorer.tick(s, mono_ts=0)
+            assert scorer.accumulator > prev, "accumulator did not rise on high tick"
+            prev = scorer.accumulator
+
+    def test_accumulator_decays_on_quiet_ticks(self):
+        """After a high period, quiet ticks must bring the accumulator down."""
+        scorer = Scorer()
+        reach_suspect(scorer)   # drive accumulator up
+        high_val = scorer.accumulator
+        assert high_val > 0.0
+
+        # One quiet tick; accumulator must have decayed.
+        scorer.tick(scores_neutral(), mono_ts=999_999_999_999)
+        assert scorer.accumulator < high_val
+
+    def test_accumulator_clamped_to_unit_interval(self):
+        """Accumulator must never exceed 1.0 or drop below 0.0."""
+        scorer = Scorer()
+        # Saturate with high scores.
+        pump_accumulator(scorer, scores(entropy=1.0, rate=1.0, extension=1.0), ticks=200)
+        assert scorer.accumulator <= 1.0
+        # Then drain with quiet ticks.
+        pump_accumulator(scorer, scores_neutral(), ticks=200)
+        assert scorer.accumulator >= 0.0
+
+    def test_single_spike_does_not_trigger(self):
+        """
+        A single tick with an extremely high fused score must not cause a
+        TRIGGER -- the accumulator needs time to build past the hard threshold.
+        This is the core anti-spike property of the leaky integrator.
+        """
+        scorer = Scorer()
+        # One tick with the maximum possible score.
+        state = scorer.tick(scores(entropy=1.0, rate=1.0, extension=1.0), mono_ts=1)
+        # Should reach SUSPECT at most (accumulator too low for HARD_THRESHOLD).
+        assert state != ArbiterState.TRIGGER
+        assert scorer.trigger_count == 0
+
+    def test_hysteresis_prevents_immediate_disarm(self):
+        """
+        A single quiet tick from SUSPECT must NOT immediately return to NORMAL
+        because the accumulator is still above (SOFT_THRESHOLD - HYSTERESIS_GAP).
+        """
+        scorer = Scorer()
+        ts = reach_suspect(scorer)
+        assert scorer.state == ArbiterState.SUSPECT
+
+        ts += 100_000_000
+        state = scorer.tick(scores_neutral(), mono_ts=ts)
+        # Accumulator still above the hysteresis floor; must stay SUSPECT.
+        assert state == ArbiterState.SUSPECT
+
+    def test_hysteresis_floor_calculation(self):
+        """The disarm floor must be exactly SOFT_THRESHOLD - HYSTERESIS_GAP."""
+        floor = _SOFT_THRESHOLD - _HYSTERESIS_GAP
+        assert floor == pytest.approx(0.30)
