@@ -28,11 +28,14 @@ from ctrr.extractor import (
     _EXTENSION_WINDOW_NS,
     _RATE_CEILING_WPS,
     _RATE_WINDOW_NS,
+    _SPREAD_CEILING,
+    _SPREAD_WINDOW_NS,
     EntropyExtractor,
     ExtensionExtractor,
     ExtractorPipeline,
     FileEvent,
     RateExtractor,
+    SpreadExtractor,
     SubScores,
 )
 
@@ -349,40 +352,6 @@ class TestExtensionExtractor:
 
 
 # ---------------------------------------------------------------------------
-# SubScores
-# ---------------------------------------------------------------------------
-
-class TestSubScores:
-    """
-    SubScores is a plain dataclass.  The only logic is active_signals(),
-    which the arbiter calls to evaluate the quorum condition (>= 2 signals).
-    """
-
-    def test_default_all_zero(self):
-        """The zero-value SubScores must represent a fully neutral reading."""
-        ss = SubScores()
-        assert ss.entropy == 0.0
-        assert ss.rate == 0.0
-        assert ss.extension == 0.0
-
-    def test_active_signals_counts_above_threshold(self):
-        """
-        active_signals(t) counts sub-scores strictly greater than t.
-        The arbiter uses the default threshold (0.1) to avoid counting
-        near-zero noise as a signal.
-        """
-        ss = SubScores(entropy=0.8, rate=0.6, extension=0.0)
-        assert ss.active_signals(threshold=0.5) == 2   # entropy + rate
-        assert ss.active_signals(threshold=0.1) == 2   # extension == 0.0, excluded
-        assert ss.active_signals(threshold=0.9) == 0   # none exceed 0.9
-
-    def test_active_signals_all_three(self):
-        ss = SubScores(entropy=0.9, rate=0.8, extension=0.7)
-        assert ss.active_signals(threshold=0.5) == 3
-
-    def test_active_signals_none(self):
-        ss = SubScores(entropy=0.0, rate=0.0, extension=0.0)
-        assert ss.active_signals(threshold=0.1) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -392,7 +361,7 @@ class TestSubScores:
 class TestExtractorPipeline:
     """
     Integration smoke tests for the pipeline wrapper.  These verify that the
-    three extractors are wired correctly and that the public interface
+    four extractors are wired correctly and that the public interface
     (process_event / latest / enrol_directory) behaves as documented.
     """
 
@@ -403,9 +372,10 @@ class TestExtractorPipeline:
         pipeline = ExtractorPipeline()
         scores = pipeline.process_event(make_close_write(str(p)))
         assert isinstance(scores, SubScores)
-        assert 0.0 <= scores.entropy <= 1.0
-        assert 0.0 <= scores.rate <= 1.0
+        assert 0.0 <= scores.entropy   <= 1.0
+        assert 0.0 <= scores.rate      <= 1.0
         assert 0.0 <= scores.extension <= 1.0
+        assert 0.0 <= scores.spread    <= 1.0
 
     def test_latest_reflects_last_event(self, tmp_path):
         """latest() must return the SubScores from the most recent process_event()."""
@@ -431,3 +401,126 @@ class TestExtractorPipeline:
         p.write_bytes(os.urandom(4096))
         scores = pipeline.process_event(make_close_write(str(p)))
         assert scores.entropy > 0.0
+
+
+# ---------------------------------------------------------------------------
+# SpreadExtractor
+# ---------------------------------------------------------------------------
+
+def make_close_write_in(directory: str, filename: str, ts: int = 0) -> FileEvent:
+    """Construct a CLOSE_WRITE event for a file in the given directory."""
+    return FileEvent(
+        path=f"{directory}/{filename}",
+        op=OP_CLOSE_WRITE,
+        mono_ts=ts,
+    )
+
+
+class TestSpreadExtractor:
+
+    def test_idle_scores_zero(self):
+        """No events: score must be 0.0."""
+        ext = SpreadExtractor()
+        event = make_close_write_in("/tmp/a", "f.txt", ts=0)
+        assert ext.score(event) == 0.0
+
+    def test_single_directory_scores_zero(self):
+        """
+        Multiple writes to the same directory must not raise the spread score --
+        localised activity is normal (e.g., editing files in one folder).
+        """
+        ext = SpreadExtractor()
+        ts = 0
+        for i in range(5):
+            ts += 100_000_000
+            ext.score(make_close_write_in("/tmp/a", f"file{i}.txt", ts=ts))
+        # All writes are in /tmp/a -- distinct_dirs = 1 -> score = 0.0.
+        assert ext.score(make_close_write_in("/tmp/a", "last.txt", ts=ts + 1)) == 0.0
+
+    def test_two_directories_scores_above_zero(self):
+        """Writes in two different directories must produce a score > 0.0."""
+        ext = SpreadExtractor()
+        ext.score(make_close_write_in("/tmp/a", "f.txt", ts=1_000_000))
+        score = ext.score(make_close_write_in("/tmp/b", "g.txt", ts=2_000_000))
+        assert score > 0.0
+
+    def test_score_at_ceiling(self):
+        """Writes across SPREAD_CEILING distinct directories must clamp score to 1.0."""
+        ext = SpreadExtractor()
+        ts = 0
+        for i in range(_SPREAD_CEILING):
+            ts += 100_000_000
+            ext.score(make_close_write_in(f"/tmp/dir{i}", "f.txt", ts=ts))
+        # Score must be 1.0 (ceiling reached).
+        assert ext.score(make_close_write_in("/tmp/extra", "x.txt", ts=ts + 1)) == pytest.approx(1.0)
+
+    def test_non_close_write_not_counted(self):
+        """Non-CLOSE_WRITE events must not contribute to spread count."""
+        ext = SpreadExtractor()
+        for i in range(_SPREAD_CEILING + 5):
+            event = FileEvent(
+                path=f"/tmp/dir{i}/f.txt",
+                op=OP_MOVED_TO,
+                mono_ts=i * 100_000_000,
+            )
+            ext.score(event)
+        # Only CLOSE_WRITE fills the window; score stays 0.0.
+        assert ext.score(make_close_write_in("/tmp/z", "z.txt", ts=9_999_999_999)) == 0.0
+
+    def test_window_eviction_drops_score(self):
+        """
+        Events that have aged out of the window must not count.
+        Write to many dirs, then wait past the window, then write to one dir.
+        Score must reset to near 0.
+        """
+        ext = SpreadExtractor()
+        # Write to 5 different directories at t=0..500ms.
+        for i in range(5):
+            ext.score(make_close_write_in(f"/tmp/dir{i}", "f.txt", ts=i * 100_000_000))
+
+        # Now send an event far past the window (t >> SPREAD_WINDOW_NS).
+        far_ts = _SPREAD_WINDOW_NS + 10_000_000_000
+        score = ext.score(make_close_write_in("/tmp/new", "f.txt", ts=far_ts))
+        # All previous events evicted; only /tmp/new in window -> score = 0.0.
+        assert score == 0.0
+
+    def test_score_always_in_range(self):
+        """Property: score must always be in [0, 1]."""
+        ext = SpreadExtractor()
+        ts = 0
+        for i in range(50):
+            ts += 50_000_000
+            s = ext.score(make_close_write_in(f"/tmp/d{i % 15}", "f.txt", ts=ts))
+            assert 0.0 <= s <= 1.0, f"score out of range at iteration {i}: {s}"
+
+
+# ---------------------------------------------------------------------------
+# SubScores -- active_signals with 4 signals
+# ---------------------------------------------------------------------------
+
+class TestSubScores:
+
+    def test_default_all_zero(self):
+        s = SubScores()
+        assert s.entropy == 0.0
+        assert s.rate == 0.0
+        assert s.extension == 0.0
+        assert s.spread == 0.0
+
+    def test_active_signals_counts_above_threshold(self):
+        """Only signals strictly above threshold are counted."""
+        s = SubScores(entropy=0.5, rate=0.0, extension=0.2, spread=0.0)
+        assert s.active_signals(0.1) == 2
+
+    def test_active_signals_all_four(self):
+        s = SubScores(entropy=0.5, rate=0.5, extension=0.5, spread=0.5)
+        assert s.active_signals(0.1) == 4
+
+    def test_active_signals_none(self):
+        s = SubScores(entropy=0.0, rate=0.0, extension=0.0, spread=0.0)
+        assert s.active_signals(0.1) == 0
+
+    def test_active_signals_spread_only(self):
+        """Spread alone above threshold counts as 1 active signal."""
+        s = SubScores(entropy=0.0, rate=0.0, extension=0.0, spread=0.5)
+        assert s.active_signals(0.1) == 1

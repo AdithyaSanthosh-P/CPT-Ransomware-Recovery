@@ -1,12 +1,13 @@
 """
 src/ctrr/extractor.py
 =====================
-Three feature extractors that run on the normalised event stream from the
+Four feature extractors that run on the normalised event stream from the
 watcher.  Each extractor produces one sub-score in [0, 1]:
 
     EntropyExtractor   -- Shannon entropy delta vs per-path baseline
     RateExtractor      -- write events per second vs a policy ceiling
     ExtensionExtractor -- fraction of recent renames introducing a novel suffix
+    SpreadExtractor    -- fraction of watched directories touched in a window
 
 The extractors share nothing with each other; they are wired together by the
 monitor.  Each sub-score is deliberately kept in [0, 1] so the fusion engine
@@ -344,18 +345,79 @@ class ExtensionExtractor:
 
 
 # ---------------------------------------------------------------------------
+# SpreadExtractor
+# ---------------------------------------------------------------------------
+
+# How many distinct parent directories written to in the window before the
+# score reaches 1.0.  Ransomware traverses the entire tree; legitimate tools
+# like tar or git also touch many directories, but they rarely produce high
+# entropy deltas simultaneously.  The quorum gate in the arbiter handles the
+# disambiguation -- spread alone is a weak signal but corroborates well.
+_SPREAD_CEILING = 10
+
+# Sliding window for spread tracking.  5 seconds captures a fast traversal
+# without accumulating noise from slow background I/O.
+_SPREAD_WINDOW_NS = 5_000_000_000    # 5 seconds in nanoseconds
+
+
+class SpreadExtractor:
+    """
+    Scores based on how many distinct directories have had write activity in
+    a sliding window.  A ransomware attack sweeping a tree writes to many
+    directories in rapid succession.
+
+    Only IN_CLOSE_WRITE events count; reads, renames, and deletes are ignored
+    because they are harder to attribute to encryption specifically.
+
+    Sub-score semantics
+    -------------------
+      0.0  -- 0 or 1 directories written to (localised activity)
+      0.5  -- _SPREAD_CEILING / 2 distinct directories in the window
+      1.0  -- >= _SPREAD_CEILING distinct directories in the window
+    """
+
+    def __init__(self) -> None:
+        # Sliding window of (mono_ts, parent_dir) pairs.
+        self._window: deque[tuple[int, str]] = deque()
+
+    def score(self, event: FileEvent) -> float:
+        """
+        Return a sub-score in [0, 1].  Only IN_CLOSE_WRITE events contribute.
+        """
+        if event.op == OP_CLOSE_WRITE:
+            parent = str(Path(event.path).parent)
+            self._window.append((event.mono_ts, parent))
+
+        # Evict events that have fallen outside the window.
+        cutoff = event.mono_ts - _SPREAD_WINDOW_NS
+        while self._window and self._window[0][0] < cutoff:
+            self._window.popleft()
+
+        # Count distinct directories in the active window.
+        distinct_dirs = len({d for _, d in self._window})
+
+        # A single directory touched is normal; score only rises above zero
+        # when the spread exceeds 1 directory.
+        if distinct_dirs <= 1:
+            return 0.0
+
+        return min(1.0, distinct_dirs / _SPREAD_CEILING)
+
+
+# ---------------------------------------------------------------------------
 # ExtractorPipeline
 # ---------------------------------------------------------------------------
 
 @dataclass
 class SubScores:
     """
-    The three sub-scores produced per fusion tick, each in [0, 1].
+    The four sub-scores produced per fusion tick, each in [0, 1].
     Passed to the scorer (fusion engine) as a unit.
     """
     entropy:   float = 0.0
     rate:      float = 0.0
     extension: float = 0.0
+    spread:    float = 0.0
 
     def active_signals(self, threshold: float = 0.1) -> int:
         """
@@ -363,14 +425,14 @@ class SubScores:
         Used by the arbiter to evaluate the quorum requirement (>= 2 signals).
         """
         return sum(
-            1 for s in (self.entropy, self.rate, self.extension)
+            1 for s in (self.entropy, self.rate, self.extension, self.spread)
             if s > threshold
         )
 
 
 class ExtractorPipeline:
     """
-    Thin wrapper that routes each incoming event to all three extractors and
+    Thin wrapper that routes each incoming event to all four extractors and
     returns a SubScores snapshot.
 
     The monitor calls process_event() for every event off the watcher queue.
@@ -381,6 +443,7 @@ class ExtractorPipeline:
         self.entropy_ext   = EntropyExtractor()
         self.rate_ext      = RateExtractor()
         self.extension_ext = ExtensionExtractor()
+        self.spread_ext    = SpreadExtractor()
         self._latest       = SubScores()
 
     def enrol_directory(self, root: str) -> None:
@@ -401,6 +464,7 @@ class ExtractorPipeline:
             entropy   = self.entropy_ext.score(event),
             rate      = self.rate_ext.score(event),
             extension = self.extension_ext.score(event),
+            spread    = self.spread_ext.score(event),
         )
         return self._latest
 

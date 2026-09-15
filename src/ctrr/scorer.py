@@ -66,11 +66,14 @@ from ctrr.extractor import SubScores
 # Entropy carries the most weight: it is the most discriminative signal on
 # the development split (bench_entropy.py).  Rate responds fastest to burst
 # behaviour.  Extension is the most precise but fires later in an attack.
-_WEIGHT_ENTROPY   = 0.45
-_WEIGHT_RATE      = 0.35
-_WEIGHT_EXTENSION = 0.20
+# Spread is the weakest individual signal (tar and git also touch many dirs)
+# but adds corroborating evidence when entropy and rate are both elevated.
+_WEIGHT_ENTROPY   = 0.40
+_WEIGHT_RATE      = 0.30
+_WEIGHT_EXTENSION = 0.15
+_WEIGHT_SPREAD    = 0.15
 
-assert abs(_WEIGHT_ENTROPY + _WEIGHT_RATE + _WEIGHT_EXTENSION - 1.0) < 1e-9, \
+assert abs(_WEIGHT_ENTROPY + _WEIGHT_RATE + _WEIGHT_EXTENSION + _WEIGHT_SPREAD - 1.0) < 1e-9, \
     "fusion weights must sum to 1.0"
 
 # Soft threshold: accumulator at or above this value moves the arbiter from
@@ -146,7 +149,8 @@ def fuse(scores: SubScores) -> float:
     return (
         _WEIGHT_ENTROPY   * scores.entropy   +
         _WEIGHT_RATE      * scores.rate      +
-        _WEIGHT_EXTENSION * scores.extension
+        _WEIGHT_EXTENSION * scores.extension +
+        _WEIGHT_SPREAD    * scores.spread
     )
 
 

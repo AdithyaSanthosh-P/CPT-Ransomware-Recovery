@@ -43,10 +43,12 @@ Design decisions
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import signal
 import sys
 import threading
+from pathlib import Path
 
 from ctrr.extractor import ExtractorPipeline, FileEvent
 from ctrr.scorer import ArbiterState, Scorer
@@ -73,12 +75,15 @@ class Monitor:
     Wires watcher -> extractors -> scorer -> snapshot into a running daemon.
     """
 
-    def __init__(self, watch_root: str, snapshot_dir: str) -> None:
-        self._pipeline = ExtractorPipeline()
-        self._scorer   = Scorer()
-        self._snapshot = SnapshotBackend(snapshot_dir, watch_root)
-        self._watcher  = Watcher(watch_root, callback=self._on_event)
+    def __init__(self, watch_root: str, snapshot_dir: str,
+                 trace_path: str | None = None) -> None:
+        self._pipeline   = ExtractorPipeline()
+        self._scorer     = Scorer()
+        self._snapshot   = SnapshotBackend(snapshot_dir, watch_root)
+        self._watcher    = Watcher(watch_root, callback=self._on_event)
         self._last_state = ArbiterState.NORMAL
+        # None means telemetry is disabled; a Path means append to that file.
+        self._trace_path = Path(trace_path) if trace_path else None
         # No lock needed: _on_event is always called from the watcher's single
         # processor thread.  If a future version adds parallel callbacks,
         # a lock must be added here.
@@ -105,6 +110,9 @@ class Monitor:
             # Stay quiet while everything is normal.
             return
 
+        # Emit a telemetry record for every non-NORMAL tick.
+        self._emit_trace(event, scores, state)
+
         label = _LABEL.get(state, f"[{state.value}]")
 
         if state == ArbiterState.TRIGGER:
@@ -113,7 +121,8 @@ class Monitor:
                 f"  entropy={scores.entropy:.2f}"
                 f"  rate={scores.rate:.2f}"
                 f"  ext={scores.extension:.2f}"
-                f"  fused={self._scorer.fused_score:.2f}",
+                f"  fused={self._scorer.fused_score:.2f}"
+                f"  acc={self._scorer.accumulator:.2f}",
                 flush=True,
             )
             try:
@@ -128,7 +137,8 @@ class Monitor:
                 f" entropy={scores.entropy:.2f}"
                 f"  rate={scores.rate:.2f}"
                 f"  ext={scores.extension:.2f}"
-                f"  fused={self._scorer.fused_score:.2f}",
+                f"  fused={self._scorer.fused_score:.2f}"
+                f"  acc={self._scorer.accumulator:.2f}",
                 flush=True,
             )
 
@@ -139,6 +149,29 @@ class Monitor:
             print(f"{label} waiting 30s before re-arming", flush=True)
 
         self._last_state = state
+
+    def _emit_trace(self, event: FileEvent, scores, state: ArbiterState) -> None:
+        """Append one JSONL record to the trace file if telemetry is enabled.
+
+        Each record captures all intermediate values needed to re-score this
+        tick offline: sub-scores, fused value, accumulator, state, and the
+        originating file event for attribution.
+        """
+        if self._trace_path is None:
+            return
+        record = {
+            "mono_ts":     event.mono_ts,
+            "state":       state.value,
+            "entropy":     round(scores.entropy, 4),
+            "rate":        round(scores.rate, 4),
+            "extension":   round(scores.extension, 4),
+            "fused":       round(self._scorer.fused_score, 4),
+            "accumulator": round(self._scorer.accumulator, 4),
+            "path":        event.path,
+            "op":          event.op,
+        }
+        with self._trace_path.open("a") as fh:
+            fh.write(json.dumps(record) + "\n")
 
 
 # ---------------------------------------------------------------------------
@@ -157,12 +190,21 @@ def _parse_args(argv=None):
         "--snapshots", default="/tmp/ctrr-snapshots", metavar="DIR",
         help="Directory where snapshots are stored (default: /tmp/ctrr-snapshots)",
     )
+    p.add_argument(
+        "--trace", default=None, metavar="FILE",
+        help="Optional path for JSONL telemetry trace (e.g. /tmp/ctrr-trace.jsonl)."
+             " Each non-NORMAL tick is appended as one JSON line.",
+    )
     return p.parse_args(argv)
 
 
 def main(argv=None) -> None:
     args = _parse_args(argv)
-    monitor = Monitor(watch_root=args.watch, snapshot_dir=args.snapshots)
+    monitor = Monitor(
+        watch_root=args.watch,
+        snapshot_dir=args.snapshots,
+        trace_path=args.trace,
+    )
     monitor.start()
 
     stop_event = threading.Event()

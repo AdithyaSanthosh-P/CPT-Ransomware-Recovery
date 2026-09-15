@@ -32,6 +32,7 @@ from ctrr.scorer import (
     _WEIGHT_ENTROPY,
     _WEIGHT_EXTENSION,
     _WEIGHT_RATE,
+    _WEIGHT_SPREAD,
     fuse,
 )
 
@@ -40,9 +41,9 @@ from ctrr.scorer import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-def scores(entropy=0.0, rate=0.0, extension=0.0) -> SubScores:
+def scores(entropy=0.0, rate=0.0, extension=0.0, spread=0.0) -> SubScores:
     """Construct a SubScores with explicit values for test use."""
-    return SubScores(entropy=entropy, rate=rate, extension=extension)
+    return SubScores(entropy=entropy, rate=rate, extension=extension, spread=spread)
 
 
 def pump_accumulator(scorer: Scorer, s: SubScores, ticks: int, start_ts: int = 0, step_ns: int = 100_000_000) -> int:
@@ -69,12 +70,12 @@ def scores_above_soft() -> SubScores:
     Return a SubScores that produces a fused_score >= SOFT_THRESHOLD but
     < HARD_THRESHOLD.  Used to drive NORMAL -> SUSPECT without triggering.
 
-    Derivation: fuse(0.8, 0, 0) = 0.45 * 0.8 = 0.36 >= SOFT_THRESHOLD (0.35).
-    fuse(0.8, 0, 0) = 0.36 < HARD_THRESHOLD (0.70).  One active signal only
-    (entropy=0.8 > 0.1), so quorum is not met even if the hard threshold were
+    Derivation: fuse(1.0, 0, 0, 0) = 0.40 * 1.0 = 0.40 >= SOFT_THRESHOLD (0.35).
+    fuse(1.0, 0, 0, 0) = 0.40 < HARD_THRESHOLD (0.70).  One active signal only
+    (entropy=1.0 > 0.1), so quorum is not met even if the hard threshold were
     reached by some other combination.
     """
-    return scores(entropy=0.8, rate=0.0, extension=0.0)
+    return scores(entropy=1.0, rate=0.0, extension=0.0, spread=0.0)
 
 
 def scores_neutral() -> SubScores:
@@ -121,8 +122,8 @@ class TestFuse:
     def test_fuse_weighted_sum_correct(self):
         """
         Hand-computed weighted sum:
-          entropy=1.0, rate=0.0, extension=0.0
-          -> 0.45 * 1.0 + 0.35 * 0.0 + 0.20 * 0.0 = 0.45
+          entropy=1.0, rate=0.0, extension=0.0, spread=0.0
+          -> 0.40 * 1.0 + 0.30 * 0.0 + 0.15 * 0.0 + 0.15 * 0.0 = 0.40
         """
         assert fuse(scores(entropy=1.0)) == pytest.approx(_WEIGHT_ENTROPY)
 
@@ -131,15 +132,15 @@ class TestFuse:
         With all sub-scores at 1.0, the weighted sum must equal 1.0 because
         the weights are constrained to sum to 1.0.
         """
-        assert fuse(scores(entropy=1.0, rate=1.0, extension=1.0)) == pytest.approx(1.0)
+        assert fuse(scores(entropy=1.0, rate=1.0, extension=1.0, spread=1.0)) == pytest.approx(1.0)
 
     def test_fuse_result_in_range(self):
         """Property: fused score is in [0, 1] for any valid sub-scores."""
         test_cases = [
-            scores(0.0, 0.0, 0.0),
-            scores(1.0, 1.0, 1.0),
-            scores(0.5, 0.3, 0.8),
-            scores(0.0, 1.0, 0.0),
+            scores(0.0, 0.0, 0.0, 0.0),
+            scores(1.0, 1.0, 1.0, 1.0),
+            scores(0.5, 0.3, 0.8, 0.2),
+            scores(0.0, 1.0, 0.0, 0.5),
         ]
         for s in test_cases:
             result = fuse(s)
