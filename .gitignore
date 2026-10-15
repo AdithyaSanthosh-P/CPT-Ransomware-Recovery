@@ -78,11 +78,11 @@ results/runs/
 *.summary.json
 
 # ── CTRR — benchmark results (KEEP — these are the test log) ─────────────────
-# tests/results/bench_entropy.jsonl and bench_entropy.md ARE committed.
+# experiments/results/bench_entropy.jsonl and bench_entropy.md ARE committed.
 # They are the empirical record of design decisions. Do not ignore them.
-!tests/results/
-!tests/results/*.jsonl
-!tests/results/*.md
+!experiments/results/
+!experiments/results/*.jsonl
+!experiments/results/*.md
 
 # ── Secrets / keys ────────────────────────────────────────────────────────────
 *.pem
