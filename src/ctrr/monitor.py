@@ -50,7 +50,7 @@ import sys
 import threading
 from pathlib import Path
 
-from ctrr.extractor import ExtractorPipeline, FileEvent
+from ctrr.extractor import OP_CLOSE_WRITE, ExtractorPipeline, FileEvent
 from ctrr.scorer import ArbiterState, Scorer
 from ctrr.snapshot import SnapshotBackend, SnapshotError
 from ctrr.watcher import Watcher
@@ -104,6 +104,21 @@ class Monitor:
 
     def _on_event(self, event: FileEvent) -> None:
         scores = self._pipeline.process_event(event)
+
+        # DEMO-SCOPE FIX: only re-evaluate the arbiter on IN_CLOSE_WRITE.
+        # scorer.tick() is currently called once per raw event rather than on
+        # a fixed 500ms cadence (see docs/modules.md Module 6, "pending").
+        # Ticking on IN_MOVED_FROM/IN_MOVED_TO too means 2 of every 3 ticks
+        # per encrypted file carry a near-zero fused score (rename events
+        # have no entropy signal), which decays the leaky integrator faster
+        # than the IN_CLOSE_WRITE ticks can raise it -- the accumulator
+        # plateaus around 0.26 and TRIGGER never fires, even after 100 files.
+        # Restricting ticks to IN_CLOSE_WRITE removes that dilution. The
+        # extractors still see every event so their sliding windows stay
+        # correct; only the arbiter's cadence changes. Proper fix is the
+        # independent 500ms timer already noted as pending.
+        if event.op != OP_CLOSE_WRITE:
+            return
         state  = self._scorer.tick(scores, event.mono_ts)
 
         if state == self._last_state and state == ArbiterState.NORMAL:

@@ -83,7 +83,15 @@ _SOFT_THRESHOLD = 0.35
 # Hard threshold: accumulator at or above this value, combined with quorum,
 # fires a snapshot.  Evaluated against the *accumulated* value so a single
 # spike in the raw fused score cannot trigger without sustained evidence.
-_HARD_THRESHOLD = 0.70
+#
+# DEMO-SCOPE TUNING: a sustained single-extension attack (real ransomware
+# behaviour -- one destination extension) caps the extension sub-score at
+# 0.2, which caps the steady-state fused score at ~0.68 with the other
+# signals maxed out. 0.70 is therefore unreachable under the demo simulator
+# regardless of corpus size or run length. Lowered to 0.65 so a sustained
+# demo attack still requires accumulated evidence (not a single spike) but
+# is reachable. Revisit alongside the policy.yaml weight sweep in Phase 4.
+_HARD_THRESHOLD = 0.65
 
 # Quorum: at least this many sub-scores must be active (above the signal
 # threshold) before a TRIGGER is allowed.  This prevents a single signal
