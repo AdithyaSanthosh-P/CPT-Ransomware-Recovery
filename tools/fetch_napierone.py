@@ -47,6 +47,7 @@ import json
 import re
 import shutil
 import sys
+import time
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -63,6 +64,9 @@ DEFAULT_DEST = REPO / "experiments" / "data" / "napierone"
 # Members are named <4-digit sequence>-<type>...; each zip also contains one
 # or two documentation PDFs without that prefix, which are skipped.
 _MEMBER_RE = re.compile(r"^\d{4}-")
+
+# Attempts per byte range before giving up (backoff 1, 2, 4, 8 s).
+_RETRIES = 5
 
 
 @dataclass(frozen=True)
@@ -147,9 +151,23 @@ class RemoteFile(io.RawIOBase):
         if self._pos >= self.size:
             return 0
         end = min(self._pos + len(buf), self.size) - 1
-        self._conn.request("GET", self._path, headers={"Range": f"bytes={self._pos}-{end}"})
-        resp = self._conn.getresponse()
-        data = resp.read()
+        # S3 closes kept-alive connections after a while (observed: after
+        # about a hundred files), so a dropped connection is reopened and the
+        # same byte range requested again.  Range requests are idempotent, so
+        # a retry cannot duplicate or skip data.
+        for attempt in range(_RETRIES):
+            try:
+                self._conn.request("GET", self._path,
+                                   headers={"Range": f"bytes={self._pos}-{end}"})
+                resp = self._conn.getresponse()
+                data = resp.read()
+                break
+            except (http.client.HTTPException, OSError) as exc:
+                if attempt == _RETRIES - 1:
+                    raise OSError(f"GET range failed after {_RETRIES} attempts: {exc}") from exc
+                self._conn.close()
+                time.sleep(2 ** attempt)
+                self._conn = http.client.HTTPSConnection(HOST, timeout=60)
         if resp.status != 206:
             raise OSError(f"GET range: HTTP {resp.status}")
         buf[:len(data)] = data
