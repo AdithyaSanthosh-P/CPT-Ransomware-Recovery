@@ -1,0 +1,7 @@
+# CTRR: allow the monitoring user to take a read-only Btrfs snapshot, and
+# nothing else.  Installed by deploy/setup_btrfs.sh to /etc/sudoers.d/ctrr
+# (mode 0440) after `visudo -cf` validates it; @USER@ is replaced at install.
+#
+# Arguments are listed exactly, with no wildcards, so sudo refuses any other
+# argument list.  The helper also validates its argument itself.
+@USER@ ALL=(root) NOPASSWD: /usr/local/sbin/ctrr-snapshot trigger, /usr/local/sbin/ctrr-snapshot floor

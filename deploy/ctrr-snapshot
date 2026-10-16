@@ -1,0 +1,63 @@
+#!/bin/bash
+# =============================================================================
+# ctrr-snapshot -- root-owned snapshot helper for CTRR
+# =============================================================================
+# Installed by deploy/setup_btrfs.sh to /usr/local/sbin/ctrr-snapshot, owned
+# root:root, mode 0755, with @SRC@ and @DST_DIR@ replaced by fixed paths.
+#
+# The unprivileged monitor runs it through one sudoers rule:
+#     sudo -n /usr/local/sbin/ctrr-snapshot trigger
+#
+# Why a helper instead of letting sudo run btrfs directly: the snapshot name
+# contains a timestamp, so a direct rule would need a wildcard
+# (`btrfs subvolume snapshot -r SRC DIR/*`).  In sudoers, `*` in arguments
+# also matches "/" and spaces, so the caller could add arguments or point the
+# destination elsewhere.  Here the caller supplies only a reason from a fixed
+# list; the source, the destination directory and the name are decided by
+# root.  This is the same "accept no paths from the client" rule planned for
+# the later ctrr-snapd daemon.
+#
+#   ctrr-snapshot trigger|floor   take a read-only snapshot, print its path
+#   ctrr-snapshot --print-config  print the fixed paths (needs no privilege)
+# =============================================================================
+set -euo pipefail
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+SRC="@SRC@"
+DST_DIR="@DST_DIR@"
+
+if [ "$#" -eq 1 ] && [ "$1" = "--print-config" ]; then
+    echo "SRC=$SRC"
+    echo "DST_DIR=$DST_DIR"
+    exit 0
+fi
+
+if [ "$#" -ne 1 ]; then
+    echo "usage: ctrr-snapshot trigger|floor|--print-config" >&2
+    exit 2
+fi
+
+case "$1" in
+    trigger|floor) reason="$1" ;;
+    *) echo "ctrr-snapshot: reason must be 'trigger' or 'floor'" >&2; exit 2 ;;
+esac
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "ctrr-snapshot: must run as root (via sudo)" >&2
+    exit 1
+fi
+
+name="$(date -u +%Y-%m-%dT%H:%M:%SZ)_${reason}"
+dst="$DST_DIR/$name"
+
+# Two triggers in the same second would collide; refuse rather than
+# overwrite or append a suffix the restore CLI does not expect.
+if [ -e "$dst" ]; then
+    echo "ctrr-snapshot: $dst already exists" >&2
+    exit 1
+fi
+
+# -r: the snapshot is created read-only (the subvolume's ro property is set
+# atomically at creation, so there is no window in which it is writable).
+btrfs subvolume snapshot -r "$SRC" "$dst" >/dev/null
+echo "$dst"

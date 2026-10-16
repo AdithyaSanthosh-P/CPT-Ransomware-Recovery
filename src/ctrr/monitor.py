@@ -13,6 +13,7 @@ Ties together the four components:
 Usage
 -----
   python -m ctrr.monitor --watch /tmp/test-corpus [--snapshots /tmp/snapshots]
+  python -m ctrr.monitor --backend btrfs --watch /mnt/ctrr/data --snapshots /mnt/ctrr/.snapshots
 
 Output (stdout, line-buffered)
 ------------------------------
@@ -52,7 +53,7 @@ from pathlib import Path
 
 from ctrr.extractor import OP_CLOSE_WRITE, ExtractorPipeline, FileEvent
 from ctrr.scorer import ArbiterState, Scorer
-from ctrr.snapshot import SnapshotBackend, SnapshotError
+from ctrr.snapshot import SnapshotError, make_backend
 from ctrr.watcher import Watcher
 
 logging.basicConfig(
@@ -76,10 +77,13 @@ class Monitor:
     """
 
     def __init__(self, watch_root: str, snapshot_dir: str,
-                 trace_path: str | None = None) -> None:
+                 trace_path: str | None = None, backend: str = "copy") -> None:
         self._pipeline   = ExtractorPipeline()
         self._scorer     = Scorer()
-        self._snapshot   = SnapshotBackend(snapshot_dir, watch_root)
+        # "copy" (the mock) stays the default so development machines without
+        # Btrfs keep working; "btrfs" raises SnapshotError here if the
+        # subvolume, helper or sudoers rule is not in place.
+        self._snapshot   = make_backend(backend, snapshot_dir, watch_root)
         self._watcher    = Watcher(watch_root, callback=self._on_event)
         self._last_state = ArbiterState.NORMAL
         # None means telemetry is disabled; a Path means append to that file.
@@ -93,6 +97,8 @@ class Monitor:
         self._pipeline.enrol_directory(self._watcher.watch_root)
         self._watcher.start()
         print("[NORMAL]   watching", self._watcher.watch_root, flush=True)
+        print(f"           snapshots: {self._snapshot.description}"
+              f" -> {self._snapshot.snapshot_dir}", flush=True)
 
     def stop(self) -> None:
         """Stop the watcher threads cleanly."""
@@ -210,16 +216,26 @@ def _parse_args(argv=None):
         help="Optional path for JSONL telemetry trace (e.g. /tmp/ctrr-trace.jsonl)."
              " Each non-NORMAL tick is appended as one JSON line.",
     )
+    p.add_argument(
+        "--backend", choices=("copy", "btrfs"), default="copy",
+        help="Snapshot backend: 'copy' is the copytree mock (writable copy);"
+             " 'btrfs' takes a read-only Btrfs snapshot via the root-owned"
+             " helper installed by deploy/setup_btrfs.sh (default: copy)",
+    )
     return p.parse_args(argv)
 
 
 def main(argv=None) -> None:
     args = _parse_args(argv)
-    monitor = Monitor(
-        watch_root=args.watch,
-        snapshot_dir=args.snapshots,
-        trace_path=args.trace,
-    )
+    try:
+        monitor = Monitor(
+            watch_root=args.watch,
+            snapshot_dir=args.snapshots,
+            trace_path=args.trace,
+            backend=args.backend,
+        )
+    except SnapshotError as exc:
+        sys.exit(f"ERROR: snapshot backend not ready: {exc}")
     monitor.start()
 
     stop_event = threading.Event()
