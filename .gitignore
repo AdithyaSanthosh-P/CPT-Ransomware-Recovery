@@ -70,6 +70,10 @@ testcorpus/
 # Simulator ground-truth logs (large, regenerated per run)
 tools/attack_logs/
 
+# Downloaded datasets (NapierOne, Berrueta). Never committed; tools/fetch_napierone.py
+# records exactly what was fetched in experiments/data/napierone/FETCH_LOG.json.
+experiments/data/
+
 # ── CTRR — experiment outputs (M6) ────────────────────────────────────────────
 # Raw per-run JSON summaries from the scenario runner.
 # Commit only the final processed tables/figures, not 100+ raw files.
