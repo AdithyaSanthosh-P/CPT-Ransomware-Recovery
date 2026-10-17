@@ -1,0 +1,35 @@
+{
+  "kind": "benign",
+  "name": "tar_x",
+  "seed": 8,
+  "mode": null,
+  "split": "heldout",
+  "corpus_files": 60,
+  "layout": "flat",
+  "ransomware_family": null,
+  "workload_command": [
+    "tar",
+    "xzf",
+    "/tmp/ctrr-batch/archives/large.tar.gz",
+    "-C",
+    "/tmp/ctrr-batch/corpus/tar_x"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-heldout/benign-tar_x-s8/trace.jsonl"
+  ],
+  "git_commit": "117f882",
+  "wall_seconds": 3.31,
+  "monitor_cpu_seconds": 1.93,
+  "triggered": false,
+  "snapshots_taken": 0,
+  "snapshot_intact_files": null
+}

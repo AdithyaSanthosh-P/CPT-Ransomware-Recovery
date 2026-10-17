@@ -1,0 +1,1583 @@
+{
+  "command": "python experiments/compare_policies.py --runs results/batch-heldout --label heldout --model-b logreg",
+  "git_commit": "117f882",
+  "seeds": [
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "split": [
+    "heldout"
+  ],
+  "aggregate": {
+    "P0": {
+      "attack_runs": 45,
+      "detected": 8,
+      "detection_rate": 0.178,
+      "median_latency_ms": 4987.0,
+      "median_files_before": 35.0,
+      "median_files_before_pct": 58.3,
+      "benign_runs": 25,
+      "false_triggers": 0
+    },
+    "P1": {
+      "attack_runs": 45,
+      "detected": 45,
+      "detection_rate": 1.0,
+      "median_latency_ms": 2583.9,
+      "median_files_before": 18,
+      "median_files_before_pct": 30.0,
+      "benign_runs": 25,
+      "false_triggers": 3
+    },
+    "P2": {
+      "attack_runs": 45,
+      "detected": 45,
+      "detection_rate": 1.0,
+      "median_latency_ms": 1062.9,
+      "median_files_before": 7,
+      "median_files_before_pct": 11.7,
+      "benign_runs": 25,
+      "false_triggers": 0
+    }
+  },
+  "by_attack_mode": {
+    "baseline": {
+      "P0": "1/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "content_napierone": {
+      "P0": "1/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "encrypt_alternate": {
+      "P0": "0/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "encrypt_head": {
+      "P0": "0/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "layout_nested": {
+      "P0": "5/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "rate_fast": {
+      "P0": "1/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "rate_slow": {
+      "P0": "0/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "rename_none": {
+      "P0": "0/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "rename_random": {
+      "P0": "0/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    }
+  },
+  "monitor_cpu_fraction_mean": {
+    "attack": 0.161,
+    "benign": 0.583
+  },
+  "runs": [
+    {
+      "run": "attack-baseline-s4",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.15694006309148265,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2583.139081,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1068.34673,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-baseline-s5",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.15481832543443919,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 8322.756693,
+        "files_before": 56,
+        "files_before_pct": 93.33333333333333
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2574.345676,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 911.097555,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-baseline-s6",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.15559030492572323,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2581.866656,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 917.152253,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-baseline-s7",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.15930599369085174,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2583.870842,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 914.921958,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-baseline-s8",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.15930599369085174,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2582.877396,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 911.892623,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-content_napierone-s4",
+      "kind": "attack",
+      "name": "content_napierone",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.15336463223787167,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 8641.194913,
+        "files_before": 58,
+        "files_before_pct": 96.66666666666667
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2580.608184,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 915.79214,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-content_napierone-s5",
+      "kind": "attack",
+      "name": "content_napierone",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.15905511811023623,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2582.107191,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 911.501461,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-content_napierone-s6",
+      "kind": "attack",
+      "name": "content_napierone",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.15839243498817965,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2580.512219,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 913.063879,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-content_napierone-s7",
+      "kind": "attack",
+      "name": "content_napierone",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.15427215189873417,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2583.14265,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 913.938685,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-content_napierone-s8",
+      "kind": "attack",
+      "name": "content_napierone",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.15855572998430142,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2586.005168,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 912.540291,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_alternate-s4",
+      "kind": "attack",
+      "name": "encrypt_alternate",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.15694006309148265,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2581.250729,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1066.876021,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-encrypt_alternate-s5",
+      "kind": "attack",
+      "name": "encrypt_alternate",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.15918045705279749,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2737.675723,
+        "files_before": 19,
+        "files_before_pct": 31.666666666666668
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 917.601992,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_alternate-s6",
+      "kind": "attack",
+      "name": "encrypt_alternate",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.15826771653543306,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2736.680959,
+        "files_before": 19,
+        "files_before_pct": 31.666666666666668
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 919.548944,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_alternate-s7",
+      "kind": "attack",
+      "name": "encrypt_alternate",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.1585173501577287,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2587.93208,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 916.518136,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_alternate-s8",
+      "kind": "attack",
+      "name": "encrypt_alternate",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.15814319433516913,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2590.885022,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 915.06289,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_head-s4",
+      "kind": "attack",
+      "name": "encrypt_head",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.15772870662460567,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2583.836841,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1068.330366,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-encrypt_head-s5",
+      "kind": "attack",
+      "name": "encrypt_head",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.15839243498817965,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2580.861523,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1066.764535,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-encrypt_head-s6",
+      "kind": "attack",
+      "name": "encrypt_head",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.15826771653543306,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2583.468071,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 918.489881,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_head-s7",
+      "kind": "attack",
+      "name": "encrypt_head",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.15456674473067916,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2587.036056,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1068.779775,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-encrypt_head-s8",
+      "kind": "attack",
+      "name": "encrypt_head",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.15905511811023623,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2739.904253,
+        "files_before": 19,
+        "files_before_pct": 31.666666666666668
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1064.411428,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-layout_nested-s4",
+      "kind": "attack",
+      "name": "layout_nested",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.1585173501577287,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 5154.036533,
+        "files_before": 35,
+        "files_before_pct": 58.333333333333336
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2123.601027,
+        "files_before": 15,
+        "files_before_pct": 25.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1061.101012,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-layout_nested-s5",
+      "kind": "attack",
+      "name": "layout_nested",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.16009463722397474,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 4402.171323,
+        "files_before": 30,
+        "files_before_pct": 50.0
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2124.545587,
+        "files_before": 15,
+        "files_before_pct": 25.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1062.899516,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-layout_nested-s6",
+      "kind": "attack",
+      "name": "layout_nested",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.15718799368088468,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 4849.814033,
+        "files_before": 33,
+        "files_before_pct": 55.0
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 1971.803396,
+        "files_before": 14,
+        "files_before_pct": 23.333333333333332
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1065.697044,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-layout_nested-s7",
+      "kind": "attack",
+      "name": "layout_nested",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.14870180959874113,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 5124.155856,
+        "files_before": 35,
+        "files_before_pct": 58.333333333333336
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 1961.769856,
+        "files_before": 14,
+        "files_before_pct": 23.333333333333332
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1058.137562,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-layout_nested-s8",
+      "kind": "attack",
+      "name": "layout_nested",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.15785319652722968,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 4261.951375,
+        "files_before": 29,
+        "files_before_pct": 48.333333333333336
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2135.974027,
+        "files_before": 15,
+        "files_before_pct": 25.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1068.005755,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-rate_fast-s4",
+      "kind": "attack",
+      "name": "rate_fast",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.29185185185185186,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 875.31601,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 313.125473,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_fast-s5",
+      "kind": "attack",
+      "name": "rate_fast",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.30029585798816566,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 2826.669889,
+        "files_before": 56,
+        "files_before_pct": 93.33333333333333
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 877.441662,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 311.949659,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_fast-s6",
+      "kind": "attack",
+      "name": "rate_fast",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.2958579881656805,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 875.776826,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 314.095532,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_fast-s7",
+      "kind": "attack",
+      "name": "rate_fast",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.2958579881656805,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 878.890733,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 312.28949,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_fast-s8",
+      "kind": "attack",
+      "name": "rate_fast",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.2968980797636632,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 879.146884,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 310.369188,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_slow-s4",
+      "kind": "attack",
+      "name": "rate_slow",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.054936089203154743,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 13248.244958,
+        "files_before": 25,
+        "files_before_pct": 41.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3315.174216,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_slow-s5",
+      "kind": "attack",
+      "name": "rate_slow",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.05466412836551535,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 13244.717561,
+        "files_before": 25,
+        "files_before_pct": 41.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3313.397954,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_slow-s6",
+      "kind": "attack",
+      "name": "rate_slow",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.05490622451753194,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 13242.399788,
+        "files_before": 25,
+        "files_before_pct": 41.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3317.440876,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_slow-s7",
+      "kind": "attack",
+      "name": "rate_slow",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.05519303969548667,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 13793.160902,
+        "files_before": 26,
+        "files_before_pct": 43.333333333333336
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3314.379707,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_slow-s8",
+      "kind": "attack",
+      "name": "rate_slow",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.055178037510192984,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 13242.776494,
+        "files_before": 25,
+        "files_before_pct": 41.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3310.995949,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rename_none-s4",
+      "kind": "attack",
+      "name": "rename_none",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.15530903328050713,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4248.520731,
+        "files_before": 29,
+        "files_before_pct": 48.333333333333336
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3489.681581,
+        "files_before": 24,
+        "files_before_pct": 40.0
+      }
+    },
+    {
+      "run": "attack-rename_none-s5",
+      "kind": "attack",
+      "name": "rename_none",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.15689381933438987,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4096.18819,
+        "files_before": 28,
+        "files_before_pct": 46.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3334.509207,
+        "files_before": 23,
+        "files_before_pct": 38.333333333333336
+      }
+    },
+    {
+      "run": "attack-rename_none-s6",
+      "kind": "attack",
+      "name": "rename_none",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.1561014263074485,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4090.104619,
+        "files_before": 28,
+        "files_before_pct": 46.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3183.378479,
+        "files_before": 22,
+        "files_before_pct": 36.666666666666664
+      }
+    },
+    {
+      "run": "attack-rename_none-s7",
+      "kind": "attack",
+      "name": "rename_none",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.15676959619952494,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4244.814257,
+        "files_before": 29,
+        "files_before_pct": 48.333333333333336
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3337.336329,
+        "files_before": 23,
+        "files_before_pct": 38.333333333333336
+      }
+    },
+    {
+      "run": "attack-rename_none-s8",
+      "kind": "attack",
+      "name": "rename_none",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.15597783056215359,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4097.907697,
+        "files_before": 28,
+        "files_before_pct": 46.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3187.791041,
+        "files_before": 22,
+        "files_before_pct": 36.666666666666664
+      }
+    },
+    {
+      "run": "attack-rename_random-s4",
+      "kind": "attack",
+      "name": "rename_random",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.14910226385636222,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 3935.437928,
+        "files_before": 27,
+        "files_before_pct": 45.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1061.840125,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-rename_random-s5",
+      "kind": "attack",
+      "name": "rename_random",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.1586424625098658,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 3950.05208,
+        "files_before": 27,
+        "files_before_pct": 45.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1066.447531,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-rename_random-s6",
+      "kind": "attack",
+      "name": "rename_random",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.15918045705279749,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 3944.726905,
+        "files_before": 27,
+        "files_before_pct": 45.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1068.624839,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-rename_random-s7",
+      "kind": "attack",
+      "name": "rename_random",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.1585173501577287,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 3946.315176,
+        "files_before": 27,
+        "files_before_pct": 45.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1066.331091,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-rename_random-s8",
+      "kind": "attack",
+      "name": "rename_random",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.15918045705279749,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 3948.712076,
+        "files_before": 27,
+        "files_before_pct": 45.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1064.383002,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "benign-cp_r-s4",
+      "kind": "benign",
+      "name": "cp_r",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.6025236593059937,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-cp_r-s5",
+      "kind": "benign",
+      "name": "cp_r",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.6075949367088607,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-cp_r-s6",
+      "kind": "benign",
+      "name": "cp_r",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.6044303797468354,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-cp_r-s7",
+      "kind": "benign",
+      "name": "cp_r",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.6025236593059937,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-cp_r-s8",
+      "kind": "benign",
+      "name": "cp_r",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.6025236593059937,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-git_clone-s4",
+      "kind": "benign",
+      "name": "git_clone",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.5993690851735015,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-git_clone-s5",
+      "kind": "benign",
+      "name": "git_clone",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.5899053627760252,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-git_clone-s6",
+      "kind": "benign",
+      "name": "git_clone",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.5993690851735015,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-git_clone-s7",
+      "kind": "benign",
+      "name": "git_clone",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.5962145110410094,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-git_clone-s8",
+      "kind": "benign",
+      "name": "git_clone",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.5993690851735015,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-tar_x-s4",
+      "kind": "benign",
+      "name": "tar_x",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.5861027190332326,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-tar_x-s5",
+      "kind": "benign",
+      "name": "tar_x",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.5861027190332326,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-tar_x-s6",
+      "kind": "benign",
+      "name": "tar_x",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.5861027190332326,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-tar_x-s7",
+      "kind": "benign",
+      "name": "tar_x",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.5861027190332326,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-tar_x-s8",
+      "kind": "benign",
+      "name": "tar_x",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.5830815709969788,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_flat-s4",
+      "kind": "benign",
+      "name": "unzip_flat",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.5805471124620061,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_flat-s5",
+      "kind": "benign",
+      "name": "unzip_flat",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.55,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_flat-s6",
+      "kind": "benign",
+      "name": "unzip_flat",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.5805471124620061,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_flat-s7",
+      "kind": "benign",
+      "name": "unzip_flat",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.551622418879056,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_flat-s8",
+      "kind": "benign",
+      "name": "unzip_flat",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.5486725663716814,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_multidir-s4",
+      "kind": "benign",
+      "name": "unzip_multidir",
+      "seed": 4,
+      "split": "heldout",
+      "cpu_fraction": 0.5701754385964912,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_multidir-s5",
+      "kind": "benign",
+      "name": "unzip_multidir",
+      "seed": 5,
+      "split": "heldout",
+      "cpu_fraction": 0.5701754385964912,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_multidir-s6",
+      "kind": "benign",
+      "name": "unzip_multidir",
+      "seed": 6,
+      "split": "heldout",
+      "cpu_fraction": 0.5701754385964912,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_multidir-s7",
+      "kind": "benign",
+      "name": "unzip_multidir",
+      "seed": 7,
+      "split": "heldout",
+      "cpu_fraction": 0.5689149560117301,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_multidir-s8",
+      "kind": "benign",
+      "name": "unzip_multidir",
+      "seed": 8,
+      "split": "heldout",
+      "cpu_fraction": 0.5643274853801169,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "kind": "benign",
+  "name": "unzip_multidir",
+  "seed": 5,
+  "mode": null,
+  "split": "heldout",
+  "corpus_files": 60,
+  "layout": "flat",
+  "ransomware_family": null,
+  "workload_command": [
+    "unzip",
+    "-q",
+    "/tmp/ctrr-batch/archives/multidir.zip",
+    "-d",
+    "/tmp/ctrr-batch/corpus/unzip_multidir"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-heldout/benign-unzip_multidir-s5/trace.jsonl"
+  ],
+  "git_commit": "117f882",
+  "wall_seconds": 3.42,
+  "monitor_cpu_seconds": 1.95,
+  "triggered": false,
+  "snapshots_taken": 0,
+  "snapshot_intact_files": null
+}

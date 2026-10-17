@@ -1,0 +1,52 @@
+{
+  "kind": "attack",
+  "name": "baseline",
+  "seed": 7,
+  "mode": {
+    "rate": "medium",
+    "rename": "fixed",
+    "encrypt": "full",
+    "content": "aes",
+    "layout": "flat"
+  },
+  "split": "heldout",
+  "corpus_files": 60,
+  "layout": "flat",
+  "ransomware_family": null,
+  "workload_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "tools/simulate_attack.py",
+    "--target",
+    "/tmp/ctrr-batch/corpus",
+    "--rate",
+    "10.0",
+    "--seed",
+    "7",
+    "--encrypt",
+    "full",
+    "--rename",
+    "fixed",
+    "--content",
+    "aes",
+    "--trace",
+    "experiments/results/batch-heldout/attack-baseline-s7/trace.jsonl"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-heldout/attack-baseline-s7/trace.jsonl"
+  ],
+  "git_commit": "117f882",
+  "wall_seconds": 12.68,
+  "monitor_cpu_seconds": 2.02,
+  "triggered": false,
+  "snapshots_taken": 0,
+  "snapshot_intact_files": null
+}
