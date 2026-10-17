@@ -120,3 +120,58 @@ class TestGroundTruthMarkers:
 
     def test_no_markers_means_unlabelled(self):
         assert replay_trace.label_tick(5, replay_trace.attack_window([])) == "unlabelled"
+
+
+class _ConstModel:
+    """Stand-in for a fitted sklearn model: predict_proba -> fixed P(class 1)."""
+
+    def __init__(self, p):
+        self.p = p
+
+    def predict_proba(self, X):
+        import numpy as np
+        return np.array([[1 - self.p, self.p]] * len(X))
+
+
+def _attack_ticks(n=80):
+    # Shannon entropy sub-score is 0 everywhere; only the model can supply content evidence.
+    return [{"type": "tick", "mono_ts": i * 100 * _MS, "entropy": 0.0, "rate": 1.0,
+             "extension": 1.0, "spread": 0.0, "feat": [0.0] * 9} for i in range(n)]
+
+
+class TestPolicies:
+    def test_p0_ignores_models_and_misses_when_entropy_is_zero(self):
+        s = replay_trace.replay(_attack_ticks(), quiet=True, policy="P0")
+        assert s["trigger_count"] == 0
+
+    def test_p1_uses_model_a_in_the_entropy_slot(self):
+        s = replay_trace.replay(_attack_ticks(), quiet=True, policy="P1",
+                                model_a=_ConstModel(0.95))
+        assert s["trigger_count"] == 1
+
+    def test_p2_uses_model_a_and_b_with_equal_weights(self):
+        s = replay_trace.replay(_attack_ticks(), quiet=True, policy="P2",
+                                model_a=_ConstModel(0.9), model_b=_ConstModel(0.9))
+        assert s["trigger_count"] == 1
+        # fused = 0.5 * 0.9 + 0.5 * 0.9
+        assert s["sequence"][0][1] == pytest.approx(0.9)
+
+    def test_p2_restores_module_weights_afterwards(self):
+        import ctrr.scorer as sc
+        before = (sc._WEIGHT_ENTROPY, sc._WEIGHT_RATE, sc._WEIGHT_EXTENSION, sc._WEIGHT_SPREAD)
+        replay_trace.replay(_attack_ticks(5), quiet=True, policy="P2",
+                            model_a=_ConstModel(0.5), model_b=_ConstModel(0.5))
+        assert (sc._WEIGHT_ENTROPY, sc._WEIGHT_RATE, sc._WEIGHT_EXTENSION, sc._WEIGHT_SPREAD) == before
+
+    def test_model_policies_require_their_models(self):
+        with pytest.raises(ValueError):
+            replay_trace.replay(_attack_ticks(3), quiet=True, policy="P1")
+        with pytest.raises(ValueError):
+            replay_trace.replay(_attack_ticks(3), quiet=True, policy="P2", model_a=_ConstModel(1))
+
+    def test_unreadable_file_gives_model_a_zero(self):
+        ticks = _attack_ticks(80)
+        for t in ticks:
+            t["feat"] = None
+        s = replay_trace.replay(ticks, quiet=True, policy="P1", model_a=_ConstModel(1.0))
+        assert s["trigger_count"] == 0
