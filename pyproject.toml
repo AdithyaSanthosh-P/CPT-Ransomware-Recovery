@@ -12,5 +12,9 @@ dependencies = [
     "numpy>=1.26",
 ]
 
+[project.optional-dependencies]
+# Not needed by the daemon; used by experiments/ and tools/ (simulator, UI, models).
+experiments = ["scikit-learn>=1.4", "joblib", "cryptography", "flask"]
+
 [tool.setuptools.packages.find]
 where = ["src"]

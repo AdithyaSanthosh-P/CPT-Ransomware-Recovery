@@ -1,0 +1,385 @@
+{
+  "command": "python experiments/model_a.py",
+  "git_commit": "2479c4c",
+  "split": {
+    "seed": 20261017,
+    "test_fraction": 0.3,
+    "train_files": 858,
+    "test_files": 522,
+    "train_positive": 390,
+    "test_positive": 310,
+    "test_sequence_numbers": 30
+  },
+  "features": [
+    "entropy",
+    "head_entropy",
+    "mid_entropy",
+    "chi2",
+    "zero_frac",
+    "printable_frac",
+    "max_frac",
+    "distinct_frac",
+    "magic"
+  ],
+  "overall_all_test_files": {
+    "logreg": {
+      "precision": 1.0,
+      "recall": 0.997,
+      "f1": 0.998,
+      "n": 522,
+      "auc": 0.999
+    },
+    "random_forest": {
+      "precision": 1.0,
+      "recall": 0.997,
+      "f1": 0.998,
+      "n": 522,
+      "auc": 0.998
+    }
+  },
+  "shannon_delta_rule": {
+    "threshold_bits": 0.4,
+    "encrypted_files_with_original": 310,
+    "recall": 0.723
+  },
+  "per_file_type": {
+    "doc": {
+      "encrypted_n": 50,
+      "original_n": 30,
+      "logreg": {
+        "precision": 1.0,
+        "recall": 0.98,
+        "f1": 0.99,
+        "n": 80
+      },
+      "random_forest": {
+        "precision": 1.0,
+        "recall": 0.98,
+        "f1": 0.99,
+        "n": 80
+      },
+      "shannon_delta": {
+        "recall": 0.98,
+        "precision_on_originals": "1.0 by construction (delta vs itself = 0)",
+        "n_pairs": 50
+      }
+    },
+    "docx": {
+      "encrypted_n": 50,
+      "original_n": 30,
+      "logreg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 80
+      },
+      "random_forest": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 80
+      },
+      "shannon_delta": {
+        "recall": 1.0,
+        "precision_on_originals": "1.0 by construction (delta vs itself = 0)",
+        "n_pairs": 50
+      }
+    },
+    "jpg": {
+      "encrypted_n": 36,
+      "original_n": 30,
+      "logreg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 66
+      },
+      "random_forest": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 66
+      },
+      "shannon_delta": {
+        "recall": 0.25,
+        "precision_on_originals": "1.0 by construction (delta vs itself = 0)",
+        "n_pairs": 36
+      }
+    },
+    "pdf": {
+      "encrypted_n": 44,
+      "original_n": 30,
+      "logreg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 74
+      },
+      "random_forest": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 74
+      },
+      "shannon_delta": {
+        "recall": 0.114,
+        "precision_on_originals": "1.0 by construction (delta vs itself = 0)",
+        "n_pairs": 44
+      }
+    },
+    "pptx": {
+      "encrypted_n": 44,
+      "original_n": 8,
+      "logreg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 52
+      },
+      "random_forest": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 52
+      },
+      "shannon_delta": {
+        "recall": 0.75,
+        "precision_on_originals": "1.0 by construction (delta vs itself = 0)",
+        "n_pairs": 44
+      }
+    },
+    "xls": {
+      "encrypted_n": 43,
+      "original_n": 30,
+      "logreg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 73
+      },
+      "random_forest": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 73
+      },
+      "shannon_delta": {
+        "recall": 0.814,
+        "precision_on_originals": "1.0 by construction (delta vs itself = 0)",
+        "n_pairs": 43
+      }
+    },
+    "xlsx": {
+      "encrypted_n": 43,
+      "original_n": 30,
+      "logreg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 73
+      },
+      "random_forest": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "n": 73
+      },
+      "shannon_delta": {
+        "recall": 1.0,
+        "precision_on_originals": "1.0 by construction (delta vs itself = 0)",
+        "n_pairs": 43
+      }
+    }
+  },
+  "archive_false_positives": {
+    "logreg": {
+      "false_positive_rate": 0.0,
+      "n": 24
+    },
+    "random_forest": {
+      "false_positive_rate": 0.0,
+      "n": 24
+    },
+    "shannon_delta_archive_over_plaintext": {
+      "false_positive_rate": 1.0,
+      "n": 24,
+      "note": "constructed: archive treated as a rewrite of a same-sequence-number original"
+    }
+  },
+  "per_family_recall": {
+    "DHARMA": {
+      "logreg": 1.0,
+      "random_forest": 1.0,
+      "n": 44
+    },
+    "MAZE": {
+      "logreg": 1.0,
+      "random_forest": 1.0,
+      "n": 44
+    },
+    "NETWALKER": {
+      "logreg": 1.0,
+      "random_forest": 1.0,
+      "n": 44
+    },
+    "NOTPETYA": {
+      "logreg": 0.978,
+      "random_forest": 0.978,
+      "n": 46
+    },
+    "PHOBOS": {
+      "logreg": 1.0,
+      "random_forest": 1.0,
+      "n": 44
+    },
+    "RYUK": {
+      "logreg": 1.0,
+      "random_forest": 1.0,
+      "n": 44
+    },
+    "SODINOKIBI": {
+      "logreg": 1.0,
+      "random_forest": 1.0,
+      "n": 44
+    }
+  },
+  "leave_one_family_out_random_forest_recall": {
+    "DHARMA": {
+      "recall": 1.0,
+      "n": 44
+    },
+    "MAZE": {
+      "recall": 1.0,
+      "n": 44
+    },
+    "NETWALKER": {
+      "recall": 1.0,
+      "n": 44
+    },
+    "NOTPETYA": {
+      "recall": 0.978,
+      "n": 46
+    },
+    "PHOBOS": {
+      "recall": 1.0,
+      "n": 44
+    },
+    "RYUK": {
+      "recall": 1.0,
+      "n": 44
+    },
+    "SODINOKIBI": {
+      "recall": 1.0,
+      "n": 44
+    }
+  },
+  "feature_ablation": {
+    "logreg/all": {
+      "precision": 1.0,
+      "recall": 0.997,
+      "f1": 0.998,
+      "n": 522,
+      "archive_false_positive_rate": 0.0,
+      "recall_by_type": {
+        "doc": 0.98,
+        "docx": 1.0,
+        "jpg": 1.0,
+        "pdf": 1.0,
+        "pptx": 1.0,
+        "xls": 1.0,
+        "xlsx": 1.0
+      }
+    },
+    "random_forest/all": {
+      "precision": 1.0,
+      "recall": 0.997,
+      "f1": 0.998,
+      "n": 522,
+      "archive_false_positive_rate": 0.0,
+      "recall_by_type": {
+        "doc": 0.98,
+        "docx": 1.0,
+        "jpg": 1.0,
+        "pdf": 1.0,
+        "pptx": 1.0,
+        "xls": 1.0,
+        "xlsx": 1.0
+      }
+    },
+    "logreg/no_magic": {
+      "precision": 0.848,
+      "recall": 0.955,
+      "f1": 0.898,
+      "n": 522,
+      "archive_false_positive_rate": 1.0,
+      "recall_by_type": {
+        "doc": 0.94,
+        "docx": 1.0,
+        "jpg": 1.0,
+        "pdf": 0.955,
+        "pptx": 1.0,
+        "xls": 0.791,
+        "xlsx": 1.0
+      }
+    },
+    "random_forest/no_magic": {
+      "precision": 0.965,
+      "recall": 0.984,
+      "f1": 0.974,
+      "n": 522,
+      "archive_false_positive_rate": 0.458,
+      "recall_by_type": {
+        "doc": 0.94,
+        "docx": 1.0,
+        "jpg": 0.972,
+        "pdf": 1.0,
+        "pptx": 0.977,
+        "xls": 1.0,
+        "xlsx": 1.0
+      }
+    },
+    "logreg/entropy_only": {
+      "precision": 0.791,
+      "recall": 0.916,
+      "f1": 0.849,
+      "n": 522,
+      "archive_false_positive_rate": 1.0,
+      "recall_by_type": {
+        "doc": 0.94,
+        "docx": 1.0,
+        "jpg": 1.0,
+        "pdf": 0.955,
+        "pptx": 0.773,
+        "xls": 0.744,
+        "xlsx": 1.0
+      }
+    },
+    "random_forest/entropy_only": {
+      "precision": 0.952,
+      "recall": 0.958,
+      "f1": 0.955,
+      "n": 522,
+      "archive_false_positive_rate": 0.625,
+      "recall_by_type": {
+        "doc": 0.9,
+        "docx": 0.98,
+        "jpg": 0.944,
+        "pdf": 0.977,
+        "pptx": 0.977,
+        "xls": 0.953,
+        "xlsx": 0.977
+      }
+    }
+  },
+  "random_forest_feature_importance": {
+    "magic": 0.434,
+    "head_entropy": 0.227,
+    "max_frac": 0.144,
+    "entropy": 0.077,
+    "chi2": 0.065,
+    "zero_frac": 0.034,
+    "mid_entropy": 0.009,
+    "printable_frac": 0.009,
+    "distinct_frac": 0.001
+  }
+}
