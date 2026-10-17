@@ -1,0 +1,52 @@
+{
+  "kind": "attack",
+  "name": "rate_fast",
+  "seed": 3,
+  "mode": {
+    "rate": "fast",
+    "rename": "fixed",
+    "encrypt": "full",
+    "content": "aes",
+    "layout": "flat"
+  },
+  "split": "dev",
+  "corpus_files": 60,
+  "layout": "flat",
+  "ransomware_family": null,
+  "workload_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "tools/simulate_attack.py",
+    "--target",
+    "/tmp/ctrr-batch/corpus",
+    "--rate",
+    "0.0",
+    "--seed",
+    "3",
+    "--encrypt",
+    "full",
+    "--rename",
+    "fixed",
+    "--content",
+    "aes",
+    "--trace",
+    "experiments/results/batch-after-b3/attack-rate_fast-s3/trace.jsonl"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-after-b3/attack-rate_fast-s3/trace.jsonl"
+  ],
+  "git_commit": "e5d672b",
+  "wall_seconds": 6.86,
+  "monitor_cpu_seconds": 1.87,
+  "triggered": true,
+  "snapshots_taken": 1,
+  "snapshot_intact_files": 15
+}

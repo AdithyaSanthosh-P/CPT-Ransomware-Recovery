@@ -64,6 +64,9 @@ def _parse_args(argv=None):
                    help="Override accumulator decay factor (default: from scorer module)")
     p.add_argument("--gap",   type=float, default=None,
                    help="Override hysteresis gap (default: from scorer module)")
+    p.add_argument("--untyped-quorum", action="store_true",
+                   help="Use the count-based quorum (any 2 active sub-scores)"
+                        " instead of the typed content + behavioural quorum")
     p.add_argument("--quiet", action="store_true",
                    help="Suppress per-tick output; print summary only")
     return p.parse_args(argv)
@@ -77,6 +80,9 @@ def _apply_policy_overrides(args) -> dict:
         "decay": scorer_module._ACCUMULATOR_DECAY,
         "gap":   scorer_module._HYSTERESIS_GAP,
     }
+    if args.untyped_quorum:
+        scorer_module._TYPED_QUORUM = False
+    policy["typed_quorum"] = scorer_module._TYPED_QUORUM
     if args.soft  is not None:
         scorer_module._SOFT_THRESHOLD    = args.soft;  policy["soft"]  = args.soft
     if args.hard  is not None:
@@ -214,7 +220,8 @@ def main(argv=None) -> None:
     window = attack_window(markers)
     print(f"Replaying {len(ticks)} ticks from {trace_path}")
     print(f"Policy: soft={policy['soft']}  hard={policy['hard']}"
-          f"  decay={policy['decay']}  gap={policy['gap']}")
+          f"  decay={policy['decay']}  gap={policy['gap']}"
+          f"  typed_quorum={policy['typed_quorum']}")
     print()
 
     if not args.quiet:

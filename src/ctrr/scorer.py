@@ -26,8 +26,8 @@ Two stages run in sequence on every tick:
   [ARBITER]      Threshold comparisons + quorum gate -> ArbiterState.
                  NORMAL  : accumulator < SOFT_THRESHOLD
                  SUSPECT : accumulator >= SOFT_THRESHOLD
-                 TRIGGER : accumulator >= ACCUMULATOR_TRIGGER_THRESHOLD
-                           AND active_signals >= QUORUM_MIN
+                 TRIGGER : accumulator >= HARD_THRESHOLD
+                           AND quorum_met() (typed: content + behavioural)
                  COOLDOWN: fixed period after a TRIGGER before re-arming
 
   TRIGGER is returned exactly once -- the tick on which the hard threshold
@@ -105,6 +105,17 @@ _HARD_THRESHOLD = 0.65
 _QUORUM_MIN              = 2
 _QUORUM_SIGNAL_THRESHOLD = 0.1   # threshold passed to SubScores.active_signals()
 
+# Typed quorum (course-plan section 3, approved; audit run R7 and bug B5).
+# A count of any two active signals does not separate a benign workload from
+# an attack: a multi-directory unzip fires rate and spread together and
+# passes it.  Typed means the corroboration must come from two different
+# KINDS of evidence: one content signal (the entropy slot, which Model A's
+# probability will occupy under policies P1/P2) and one behavioural signal
+# (rate, extension or spread).  Rate plus spread alone, with unchanged file
+# content, can no longer trigger.  Kept as a module attribute so
+# tools/replay_trace.py can compare typed against count-based on one trace.
+_TYPED_QUORUM = True
+
 # Cooldown: nanoseconds the arbiter waits in COOLDOWN before re-arming.
 # 30 seconds is long enough to capture all files encrypted in a typical
 # ransomware burst while short enough to re-arm if the attack resumes.
@@ -141,6 +152,21 @@ class ArbiterState(Enum):
     SUSPECT  = "SUSPECT"
     TRIGGER  = "TRIGGER"    # transient: returned once, then COOLDOWN
     COOLDOWN = "COOLDOWN"
+
+
+def quorum_met(scores: SubScores) -> bool:
+    """
+    Pure quorum test on one tick's instantaneous sub-scores.
+
+    Typed (default): the content signal and at least one behavioural signal
+    are each above _QUORUM_SIGNAL_THRESHOLD.  Count-based (_TYPED_QUORUM
+    False): at least _QUORUM_MIN of the four sub-scores are.
+    """
+    t = _QUORUM_SIGNAL_THRESHOLD
+    if _TYPED_QUORUM:
+        return scores.entropy > t and (
+            scores.rate > t or scores.extension > t or scores.spread > t)
+    return scores.active_signals(t) >= _QUORUM_MIN
 
 
 # ---------------------------------------------------------------------------
@@ -249,8 +275,7 @@ class Scorer:
                 self._state = ArbiterState.NORMAL
                 return self._state
 
-            if (self._accumulator >= _HARD_THRESHOLD and
-                    scores.active_signals(_QUORUM_SIGNAL_THRESHOLD) >= _QUORUM_MIN):
+            if self._accumulator >= _HARD_THRESHOLD and quorum_met(scores):
                 # Hard threshold crossed with quorum -- fire a snapshot.
                 self._trigger_ts    = mono_ts
                 self._trigger_count += 1

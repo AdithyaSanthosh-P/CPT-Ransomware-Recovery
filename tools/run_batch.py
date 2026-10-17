@@ -200,23 +200,30 @@ def run_one(kind: str, name: str, seed: int, work: Path,
             mon.kill()
             return "FAILED: monitor did not start"
 
-        if attack:
-            cmd = [sys.executable, "tools/simulate_attack.py", "--target", str(corpus),
-                   "--rate", str(_RATES[attack["rate"]]), "--seed", str(seed),
-                   "--encrypt", attack["encrypt"], "--rename", attack["rename"],
-                   "--content", attack["content"], "--trace", str(trace)]
-            if pair:
-                cmd += ["--cipher-dir", str(pair)]
-            rc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True).returncode
-        else:
-            cmd = _benign_command(name, corpus, arch)
-            _write_marker(trace, "WORKLOAD_START", workload=name)
-            rc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True).returncode
-            _write_marker(trace, "WORKLOAD_END", workload=name)
-        time.sleep(_SETTLE_S)
-        cpu = _cpu_seconds(mon.pid)
-        mon.send_signal(signal.SIGINT)
-        mon.wait(timeout=15)
+        # try/finally: a crash in the workload must never leave a monitor
+        # running, or it keeps appending later runs' events to this trace.
+        try:
+            if attack:
+                cmd = [sys.executable, "tools/simulate_attack.py", "--target", str(corpus),
+                       "--rate", str(_RATES[attack["rate"]]), "--seed", str(seed),
+                       "--encrypt", attack["encrypt"], "--rename", attack["rename"],
+                       "--content", attack["content"], "--trace", str(trace)]
+                if pair:
+                    cmd += ["--cipher-dir", str(pair)]
+                rc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True).returncode
+            else:
+                cmd = _benign_command(name, corpus, arch)
+                _write_marker(trace, "WORKLOAD_START", workload=name)
+                rc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True).returncode
+                _write_marker(trace, "WORKLOAD_END", workload=name)
+            time.sleep(_SETTLE_S)
+            cpu = _cpu_seconds(mon.pid)
+            mon.send_signal(signal.SIGINT)
+            mon.wait(timeout=15)
+        finally:
+            if mon.poll() is None:
+                mon.kill()
+                mon.wait()
 
     text = mlog.read_text()
     snap_dirs = sorted(snaps.glob("*_trigger")) if snaps.exists() else []

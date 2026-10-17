@@ -1,0 +1,35 @@
+{
+  "kind": "benign",
+  "name": "unzip_flat",
+  "seed": 2,
+  "mode": null,
+  "split": "dev",
+  "corpus_files": 60,
+  "layout": "flat",
+  "ransomware_family": null,
+  "workload_command": [
+    "unzip",
+    "-q",
+    "/tmp/ctrr-batch/archives/flat.zip",
+    "-d",
+    "/tmp/ctrr-batch/corpus/unzip_flat"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-after-b3/benign-unzip_flat-s2/trace.jsonl"
+  ],
+  "git_commit": "e5d672b",
+  "wall_seconds": 3.29,
+  "monitor_cpu_seconds": 1.81,
+  "triggered": false,
+  "snapshots_taken": 0,
+  "snapshot_intact_files": null
+}

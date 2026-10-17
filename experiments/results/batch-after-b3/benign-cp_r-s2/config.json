@@ -1,0 +1,34 @@
+{
+  "kind": "benign",
+  "name": "cp_r",
+  "seed": 2,
+  "mode": null,
+  "split": "dev",
+  "corpus_files": 60,
+  "layout": "flat",
+  "ransomware_family": null,
+  "workload_command": [
+    "cp",
+    "-r",
+    "/tmp/ctrr-batch/archives/copysrc",
+    "/tmp/ctrr-batch/corpus/cp_r"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-after-b3/benign-cp_r-s2/trace.jsonl"
+  ],
+  "git_commit": "e5d672b",
+  "wall_seconds": 3.27,
+  "monitor_cpu_seconds": 1.88,
+  "triggered": false,
+  "snapshots_taken": 0,
+  "snapshot_intact_files": null
+}

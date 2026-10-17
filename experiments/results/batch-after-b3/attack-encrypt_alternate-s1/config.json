@@ -1,0 +1,52 @@
+{
+  "kind": "attack",
+  "name": "encrypt_alternate",
+  "seed": 1,
+  "mode": {
+    "rate": "medium",
+    "rename": "fixed",
+    "encrypt": "alternate",
+    "content": "aes",
+    "layout": "flat"
+  },
+  "split": "dev",
+  "corpus_files": 60,
+  "layout": "flat",
+  "ransomware_family": null,
+  "workload_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "tools/simulate_attack.py",
+    "--target",
+    "/tmp/ctrr-batch/corpus",
+    "--rate",
+    "10.0",
+    "--seed",
+    "1",
+    "--encrypt",
+    "alternate",
+    "--rename",
+    "fixed",
+    "--content",
+    "aes",
+    "--trace",
+    "experiments/results/batch-after-b3/attack-encrypt_alternate-s1/trace.jsonl"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-after-b3/attack-encrypt_alternate-s1/trace.jsonl"
+  ],
+  "git_commit": "e5d672b",
+  "wall_seconds": 12.78,
+  "monitor_cpu_seconds": 1.93,
+  "triggered": false,
+  "snapshots_taken": 0,
+  "snapshot_intact_files": null
+}

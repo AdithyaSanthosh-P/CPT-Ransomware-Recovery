@@ -419,3 +419,50 @@ class TestAccumulator:
         """The disarm floor must be exactly SOFT_THRESHOLD - HYSTERESIS_GAP."""
         floor = _SOFT_THRESHOLD - _HYSTERESIS_GAP
         assert floor == pytest.approx(0.30)
+
+
+# ---------------------------------------------------------------------------
+# Typed quorum (course-plan section 3; audit R7 / B5)
+# ---------------------------------------------------------------------------
+
+class TestTypedQuorum:
+    """Corroboration must pair one content signal with one behavioural signal."""
+
+    def test_content_plus_behavioural_meets_quorum(self):
+        import ctrr.scorer as sc
+        assert sc.quorum_met(scores(entropy=0.5, rate=0.5))
+        assert sc.quorum_met(scores(entropy=0.5, extension=0.5))
+        assert sc.quorum_met(scores(entropy=0.5, spread=0.5))
+
+    def test_two_behavioural_signals_without_content_do_not(self):
+        import ctrr.scorer as sc
+        # The multi-directory unzip pattern: rate and spread up, content unchanged.
+        assert not sc.quorum_met(scores(rate=1.0, spread=1.0, extension=1.0))
+
+    def test_content_alone_does_not(self):
+        import ctrr.scorer as sc
+        assert not sc.quorum_met(scores(entropy=1.0))
+
+    def test_count_based_quorum_still_available_for_replay(self, monkeypatch):
+        import ctrr.scorer as sc
+        monkeypatch.setattr(sc, "_TYPED_QUORUM", False)
+        assert sc.quorum_met(scores(rate=1.0, spread=1.0))
+
+    def test_arbiter_refuses_trigger_without_content_signal(self, monkeypatch):
+        """With the hard threshold lowered so behavioural signals alone can
+        reach it, the count-based quorum would trigger and the typed one must
+        not."""
+        import ctrr.scorer as sc
+        monkeypatch.setattr(sc, "_HARD_THRESHOLD", 0.5)
+        behavioural = scores(rate=1.0, extension=1.0, spread=1.0)   # fused 0.6
+        states = set()
+        scorer = Scorer()
+        for i in range(60):
+            states.add(scorer.tick(behavioural, mono_ts=i * 100_000_000))
+        assert ArbiterState.SUSPECT in states
+        assert ArbiterState.TRIGGER not in states
+
+        monkeypatch.setattr(sc, "_TYPED_QUORUM", False)
+        scorer = Scorer()
+        states = {scorer.tick(behavioural, mono_ts=i * 100_000_000) for i in range(60)}
+        assert ArbiterState.TRIGGER in states
