@@ -104,14 +104,53 @@ def _load_trace(path: str) -> list[dict]:
     return records
 
 
+def split_records(records: list[dict]) -> tuple[list[dict], list[dict]]:
+    """
+    Split a trace into (ticks, markers).
+
+    Ticks are the monitor's per-tick records; markers are the ground-truth
+    ATTACK_START / ATTACK_END lines written by the simulator.  Records with
+    no "type" field come from the pre-Session-12 monitor and are ticks.
+    """
+    ticks   = [r for r in records if r.get("type", "tick") == "tick"]
+    markers = [r for r in records if r.get("type") == "marker"]
+    return ticks, markers
+
+
+def attack_window(markers: list[dict]) -> tuple[int, int | None] | None:
+    """(start_ns, end_ns) of the first attack, or None if the trace has no
+    ATTACK_START.  end_ns is None if the attack never logged an end."""
+    start = next((m["mono_ts"] for m in markers if m["event"] == "ATTACK_START"), None)
+    if start is None:
+        return None
+    end = next((m["mono_ts"] for m in markers
+                if m["event"] == "ATTACK_END" and m["mono_ts"] >= start), None)
+    return start, end
+
+
+def label_tick(mono_ts: int, window: tuple[int, int | None] | None) -> str:
+    """Ground-truth label for one tick: 'attack', 'benign', or 'unlabelled'
+    (no markers in the trace, so nothing is known)."""
+    if window is None:
+        return "unlabelled"
+    start, end = window
+    return "attack" if mono_ts >= start and (end is None or mono_ts <= end) else "benign"
+
+
 def replay(records: list[dict], quiet: bool) -> dict:
     """
-    Re-score every record through a fresh Scorer.
+    Re-score every tick record through a fresh Scorer.
+
+    Marker records, if present in `records`, are ignored for scoring.
 
     Returns a summary dict with counts of ticks per state, number of triggers
-    fired, and the index of the first TRIGGER tick (or None).
+    fired, the index of the first TRIGGER tick (or None), and the per-tick
+    (state, fused, accumulator) sequence so callers can compare it against
+    the live run's recorded values.
     """
+    records, _markers = split_records(records)
     sc = Scorer()
+    sequence: list[tuple[str, float, float]] = []
     state_counts: dict[str, int] = {s.value: 0 for s in ArbiterState}
     trigger_count  = 0
     first_trigger_tick = None
@@ -124,10 +163,14 @@ def replay(records: list[dict], quiet: bool) -> dict:
             entropy=rec["entropy"],
             rate=rec["rate"],
             extension=rec["extension"],
+            # Traces written before Session 12 lack "spread"; 0.0 is what
+            # the extractor emits for a flat directory anyway.
+            spread=rec.get("spread", 0.0),
         )
         # mono_ts from trace; tick() only needs it for cooldown bookkeeping.
         state = sc.tick(sub, mono_ts=rec["mono_ts"])
         state_counts[state.value] = state_counts.get(state.value, 0) + 1
+        sequence.append((state.value, sc.fused_score, sc.accumulator))
 
         if state == ArbiterState.TRIGGER:
             trigger_count += 1
@@ -149,6 +192,7 @@ def replay(records: list[dict], quiet: bool) -> dict:
         "first_trigger_tick": first_trigger_tick,
         "state_counts":      state_counts,
         "transitions":       transitions,
+        "sequence":          sequence,
     }
 
 
@@ -166,7 +210,9 @@ def main(argv=None) -> None:
         print("ERROR: trace file is empty or contains no valid records.", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Replaying {len(records)} ticks from {trace_path}")
+    ticks, markers = split_records(records)
+    window = attack_window(markers)
+    print(f"Replaying {len(ticks)} ticks from {trace_path}")
     print(f"Policy: soft={policy['soft']}  hard={policy['hard']}"
           f"  decay={policy['decay']}  gap={policy['gap']}")
     print()
@@ -174,7 +220,7 @@ def main(argv=None) -> None:
     if not args.quiet:
         print("State transitions:")
 
-    summary = replay(records, quiet=args.quiet)
+    summary = replay(ticks, quiet=args.quiet)
 
     print()
     print("Summary")
@@ -187,6 +233,19 @@ def main(argv=None) -> None:
               f" into trace)")
     else:
         print(f"  First trigger   : none (did not reach TRIGGER under this policy)")
+    if window is not None:
+        start, end = window
+        n_attack = sum(1 for t in ticks if label_tick(t["mono_ts"], window) == "attack")
+        print(f"  Ground truth    : attack window has {n_attack} of {len(ticks)} ticks"
+              f"{'' if end is not None else ' (no ATTACK_END marker)'}")
+        ft = summary["first_trigger_tick"]
+        if ft is None:
+            print("  Detection       : MISSED (no TRIGGER during or after the attack)")
+        else:
+            lat_ms = (ticks[ft]["mono_ts"] - start) / 1e6
+            kind = label_tick(ticks[ft]["mono_ts"], window)
+            print(f"  Detection       : TRIGGER {lat_ms:.0f} ms after ATTACK_START"
+                  f" ({'in' if kind == 'attack' else 'OUTSIDE'} attack window)")
     print(f"  Ticks per state :")
     for state, count in sorted(summary["state_counts"].items()):
         if count > 0:

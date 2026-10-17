@@ -127,12 +127,16 @@ class Monitor:
             return
         state  = self._scorer.tick(scores, event.mono_ts)
 
-        if state == self._last_state and state == ArbiterState.NORMAL:
-            # Stay quiet while everything is normal.
-            return
-
-        # Emit a telemetry record for every non-NORMAL tick.
+        # Telemetry records EVERY tick, NORMAL included.  Logging only
+        # non-NORMAL ticks (the earlier behaviour) dropped the quiet ticks
+        # the accumulator decays on, so a saved trace could not be replayed
+        # to the same accumulator values and had no negative examples for
+        # training Model B (audit bug B1).
         self._emit_trace(event, scores, state)
+
+        if state == self._last_state and state == ArbiterState.NORMAL:
+            # Stay quiet on the terminal while everything is normal.
+            return
 
         label = _LABEL.get(state, f"[{state.value}]")
 
@@ -174,20 +178,27 @@ class Monitor:
     def _emit_trace(self, event: FileEvent, scores, state: ArbiterState) -> None:
         """Append one JSONL record to the trace file if telemetry is enabled.
 
-        Each record captures all intermediate values needed to re-score this
-        tick offline: sub-scores, fused value, accumulator, state, and the
-        originating file event for attribution.
+        Each record captures everything needed to re-score this tick offline:
+        all four sub-scores, the fused value, the accumulator, the state and
+        the originating file event for attribution.  Values are written at
+        full float precision (no rounding) so that replaying the trace under
+        the same policy reproduces the live accumulator and state sequence
+        exactly; rounding to 4 decimals could flip a threshold comparison.
+        "type":"tick" distinguishes these from the "marker" records the
+        attack simulator writes into the same file (ground truth).
         """
         if self._trace_path is None:
             return
         record = {
+            "type":        "tick",
             "mono_ts":     event.mono_ts,
             "state":       state.value,
-            "entropy":     round(scores.entropy, 4),
-            "rate":        round(scores.rate, 4),
-            "extension":   round(scores.extension, 4),
-            "fused":       round(self._scorer.fused_score, 4),
-            "accumulator": round(self._scorer.accumulator, 4),
+            "entropy":     scores.entropy,
+            "rate":        scores.rate,
+            "extension":   scores.extension,
+            "spread":      scores.spread,
+            "fused":       self._scorer.fused_score,
+            "accumulator": self._scorer.accumulator,
             "path":        event.path,
             "op":          event.op,
         }
@@ -214,7 +225,7 @@ def _parse_args(argv=None):
     p.add_argument(
         "--trace", default=None, metavar="FILE",
         help="Optional path for JSONL telemetry trace (e.g. /tmp/ctrr-trace.jsonl)."
-             " Each non-NORMAL tick is appended as one JSON line.",
+             " Every tick is appended as one JSON line.",
     )
     p.add_argument(
         "--backend", choices=("copy", "btrfs"), default="copy",

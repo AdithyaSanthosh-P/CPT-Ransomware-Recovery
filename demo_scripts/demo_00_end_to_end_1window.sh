@@ -72,7 +72,7 @@ tail -f "$DAEMON_LOG" &
 TAIL_PID=$!
 
 section "0.2  Launching attack simulator (foreground)"
-python tools/simulate_attack.py --target "$CORPUS" --rate 10
+python tools/simulate_attack.py --target "$CORPUS" --rate 10 --trace "$TRACE"
 
 # Give the daemon a moment to process the last events / write the trigger line.
 sleep 3

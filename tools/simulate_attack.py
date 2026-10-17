@@ -34,6 +34,7 @@ Dependencies
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -152,7 +153,24 @@ def _collect_files(target: Path) -> list[Path]:
     return files
 
 
-def simulate(target: Path, rate: float, verbose: bool) -> None:
+def _write_marker(trace: Path | None, event: str, **fields) -> None:
+    """
+    Append one ground-truth marker to the trace file.
+
+    time.monotonic_ns() is CLOCK_MONOTONIC, the same clock the watcher stamps
+    FileEvents with, and both processes run on one machine, so marker and
+    tick timestamps are directly comparable.  Single-line O_APPEND writes
+    from two processes do not interleave mid-line for lines this short.
+    """
+    if trace is None:
+        return
+    rec = {"type": "marker", "event": event, "mono_ts": time.monotonic_ns(), **fields}
+    with trace.open("a") as fh:
+        fh.write(json.dumps(rec) + "\n")
+
+
+def simulate(target: Path, rate: float, verbose: bool,
+             trace: Path | None = None) -> None:
     """
     Encrypt files in target at the specified rate (files per second).
 
@@ -161,6 +179,7 @@ def simulate(target: Path, rate: float, verbose: bool) -> None:
     target  : directory to attack
     rate    : files per second (0 = as fast as possible)
     verbose : print each file as it is encrypted
+    trace   : optional JSONL file; ATTACK_START / ATTACK_END markers are appended
     """
     _check_safety(target)
 
@@ -170,6 +189,7 @@ def simulate(target: Path, rate: float, verbose: bool) -> None:
         return
 
     print(f"[ATTACK_START] target={target}  files={len(files)}  rate={rate} fps")
+    _write_marker(trace, "ATTACK_START", files=len(files), rate=rate)
 
     interval = (1.0 / rate) if rate > 0 else 0.0
     encrypted = 0
@@ -177,6 +197,7 @@ def simulate(target: Path, rate: float, verbose: bool) -> None:
     for path in files:
         if _stop_requested(target):
             print(f"[ATTACK_STOP] kill-switch detected after {encrypted} files")
+            _write_marker(trace, "ATTACK_END", encrypted=encrypted, stopped=True)
             return
 
         try:
@@ -191,6 +212,7 @@ def simulate(target: Path, rate: float, verbose: bool) -> None:
             time.sleep(interval)
 
     print(f"[ATTACK_END] encrypted={encrypted}")
+    _write_marker(trace, "ATTACK_END", encrypted=encrypted, stopped=False)
 
 
 # ---------------------------------------------------------------------------
@@ -213,9 +235,15 @@ def _parse_args(argv=None):
         "--verbose", "-v", action="store_true",
         help="Print each file as it is encrypted",
     )
+    p.add_argument(
+        "--trace", default=None, metavar="FILE",
+        help="Append ATTACK_START / ATTACK_END ground-truth markers to this JSONL"
+             " file (normally the same file the monitor writes with --trace)",
+    )
     return p.parse_args(argv)
 
 
 if __name__ == "__main__":
     args = _parse_args()
-    simulate(Path(args.target), rate=args.rate, verbose=args.verbose)
+    simulate(Path(args.target), rate=args.rate, verbose=args.verbose,
+             trace=Path(args.trace) if args.trace else None)

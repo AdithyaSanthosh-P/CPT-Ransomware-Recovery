@@ -29,7 +29,7 @@ cd "$PROJECT_ROOT" || { echo "Set PROJECT_ROOT at the top of this script."; exit
 section() { echo; echo "==================================================================="; echo "$1"; echo "==================================================================="; }
 
 section "0.2  Launching attack simulator — watch Terminal 1 for TRIGGER"
-python tools/simulate_attack.py --target "$CORPUS" --rate 10
+python tools/simulate_attack.py --target "$CORPUS" --rate 10 --trace /tmp/ctrr-trace.jsonl
 sleep 2
 
 # WHAT THIS PROVES: the snapshot was taken MID-ATTACK. Expect roughly half
