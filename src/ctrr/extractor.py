@@ -6,7 +6,7 @@ watcher.  Each extractor produces one sub-score in [0, 1]:
 
     EntropyExtractor   -- Shannon entropy delta vs per-path baseline
     RateExtractor      -- write events per second vs a policy ceiling
-    ExtensionExtractor -- fraction of recent renames introducing a novel suffix
+    ExtensionExtractor -- uniformity of one novel suffix across recent renames
     SpreadExtractor    -- fraction of watched directories touched in a window
 
 The extractors share nothing with each other; they are wired together by the
@@ -284,9 +284,10 @@ class RateExtractor:
 # ExtensionExtractor
 # ---------------------------------------------------------------------------
 
-# How many distinct novel extensions in the rename window before score = 1.0.
-# "Novel" means the destination extension was not seen in any MOVED_FROM
-# within the same window, i.e. the rename introduced a new suffix.
+# Extension-changing renames needed in the window before the score can reach
+# 1.0.  Below this the score is scaled down linearly, so a single stray
+# rename cannot read as "uniform" just because it is the only one.
+# "Novel" means the rename changed the extension to a non-empty one.
 _EXTENSION_CEILING = 5
 
 # Sliding window for rename events.
@@ -295,18 +296,31 @@ _EXTENSION_WINDOW_NS = 10_000_000_000   # 10 seconds in nanoseconds
 
 class ExtensionExtractor:
     """
-    Scores based on how many rename events in a sliding window introduced a
-    new file extension that was not present before the rename.
+    Scores how uniformly the renames in a sliding window move files to ONE
+    new suffix (course-plan fix for audit bug B3; spec in projectContext.md).
 
-    Ransomware typically renames every encrypted file to a new suffix
-    (.locked, .enc, .crypted, etc.).  Legitimate renames almost never
-    introduce a single novel extension across hundreds of files.
+    Ransomware that appends a fixed suffix (.locked, .enc) to every file it
+    encrypts produces many renames that all end in the same new extension.
+    Ordinary activity produces few extension-changing renames, and they end
+    in a mix of extensions.
+
+        n     = extension-changing renames in the window
+        top   = how many of those end in the single most common new suffix
+        score = (top / n) * min(1, n / _EXTENSION_CEILING)
+
+    The first factor is uniformity, the second is volume.  The earlier
+    version counted DISTINCT new suffixes, which scored a real single-suffix
+    attack at only 1/5 = 0.2 and was the reason the hard threshold had to be
+    lowered.
+
+    Known limit: an attack that gives every file a different random suffix
+    has uniformity 1/n and scores near zero here.  That is what the spec's
+    wording implies; the batch has a rename_random mode to measure it.
 
     Sub-score semantics
     -------------------
-      0.0  -- no renames, or all renames preserved the extension
-      0.5  -- _EXTENSION_CEILING / 2 novel extensions in the window
-      1.0  -- >= _EXTENSION_CEILING novel extensions seen
+      0.0  -- no extension-changing renames in the window
+      1.0  -- >= _EXTENSION_CEILING such renames, all to the same suffix
     """
 
     def __init__(self) -> None:
@@ -333,15 +347,20 @@ class ExtensionExtractor:
         while self._renames and self._renames[0][0] < cutoff:
             self._renames.popleft()
 
-        # Count how many renames in the window changed the extension.
+        # Only renames that changed the extension to a non-empty one count.
         # A rename that keeps the same extension (e.g. a temp-file swap) is
-        # not counted as a novel extension event.
-        novel_extensions: set[str] = set()
+        # not an extension event.
+        dst_counts: dict[str, int] = {}
         for _, src_ext, dst_ext in self._renames:
             if dst_ext != src_ext and dst_ext:
-                novel_extensions.add(dst_ext)
+                dst_counts[dst_ext] = dst_counts.get(dst_ext, 0) + 1
+        n = sum(dst_counts.values())
+        if n == 0:
+            return 0.0
 
-        return min(1.0, len(novel_extensions) / _EXTENSION_CEILING)
+        uniformity = max(dst_counts.values()) / n
+        volume     = min(1.0, n / _EXTENSION_CEILING)
+        return uniformity * volume
 
 
 # ---------------------------------------------------------------------------

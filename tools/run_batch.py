@@ -53,7 +53,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from build_corpus import build  # noqa: E402
 from simulate_attack import _write_marker  # noqa: E402
 
-RESULTS = ROOT / "experiments" / "results" / "batch"
+RESULTS = ROOT / "experiments" / "results" / "batch"   # overridable: --results-dir
 NAPIERONE = ROOT / "experiments" / "data" / "napierone"
 CORPUS_FILES = 60
 DEV_SEEDS, HELDOUT_SEEDS = (1, 2, 3), (4, 5, 6, 7, 8)
@@ -247,8 +247,13 @@ def main(argv=None) -> None:
     ap.add_argument("--only", nargs="+", metavar="KIND:NAME",
                     help="e.g. attack:baseline benign:git_clone (default: everything)")
     ap.add_argument("--workdir", type=Path, default=Path("/tmp/ctrr-batch"))
+    ap.add_argument("--results-dir", type=Path, default=None,
+                    help="output directory (default: experiments/results/batch)")
     ap.add_argument("--force", action="store_true", help="re-run runs that already have output")
     a = ap.parse_args(argv)
+    global RESULTS
+    if a.results_dir:
+        RESULTS = a.results_dir
 
     seeds = (DEV_SEEDS if a.split == "dev" else HELDOUT_SEEDS) if a.split else tuple(a.seeds)
     plan = [("attack", n) for n in ATTACKS] + [("benign", n) for n in BENIGN]

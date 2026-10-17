@@ -268,8 +268,9 @@ class TestExtensionExtractor:
     are used.
 
     Window width: _EXTENSION_WINDOW_NS nanoseconds (10 seconds).
-    Ceiling:      _EXTENSION_CEILING distinct novel extensions (5).
-    Score:        min(1.0, len(novel_extensions) / ceiling).
+    Ceiling:      _EXTENSION_CEILING extension-changing renames (5).
+    Score:        uniformity of the most common new suffix, scaled by volume:
+                  (top / n) * min(1, n / ceiling).
     """
 
     def test_no_renames_scores_zero(self):
@@ -299,8 +300,8 @@ class TestExtensionExtractor:
 
     def test_single_novel_extension_scores_between_zero_and_one(self):
         """
-        One rename introducing a new suffix scores 1 / _EXTENSION_CEILING,
-        which is > 0 and < 1 (given ceiling >= 2).
+        One rename introducing a new suffix is perfectly uniform but low
+        volume: it scores 1 / _EXTENSION_CEILING, which is > 0 and < 1.
         """
         ext = ExtensionExtractor()
         score = ext.score(make_rename("/tmp/doc.txt", "/tmp/doc.txt.enc"))
@@ -308,16 +309,42 @@ class TestExtensionExtractor:
 
     def test_ceiling_capped_at_one(self):
         """
-        Once the ceiling number of distinct novel extensions is observed,
+        Once the ceiling number of renames to ONE new suffix is observed,
         the score must be exactly 1.0 and must not exceed it.
         """
         ext = ExtensionExtractor()
         score = 0.0
         for i in range(_EXTENSION_CEILING + 5):
             score = ext.score(
-                make_rename(f"/tmp/file{i}.txt", f"/tmp/file{i}.ext{i}", mono_ts=0)
+                make_rename(f"/tmp/file{i}.txt", f"/tmp/file{i}.txt.enc", mono_ts=0)
             )
         assert score == 1.0
+
+    def test_single_suffix_attack_reaches_one(self):
+        """Regression for B3: a fixed-suffix attack used to cap at 0.2."""
+        ext = ExtensionExtractor()
+        score = 0.0
+        for i in range(_EXTENSION_CEILING):
+            score = ext.score(make_rename(f"/tmp/f{i}.doc", f"/tmp/f{i}.doc.enc"))
+        assert score == 1.0
+
+    def test_scattered_suffixes_score_low(self):
+        """Many renames to all-different suffixes are not uniform: 1/n * 1."""
+        ext = ExtensionExtractor()
+        n = _EXTENSION_CEILING * 2
+        score = 0.0
+        for i in range(n):
+            score = ext.score(make_rename(f"/tmp/f{i}.txt", f"/tmp/f{i}.x{i}"))
+        assert score == pytest.approx(1 / n)
+
+    def test_mixed_suffixes_between_uniform_and_scattered(self):
+        ext = ExtensionExtractor()
+        score = 0.0
+        for i in range(8):                      # 8 to .enc, 2 to others
+            score = ext.score(make_rename(f"/tmp/a{i}.txt", f"/tmp/a{i}.enc"))
+        for i in range(2):
+            score = ext.score(make_rename(f"/tmp/b{i}.txt", f"/tmp/b{i}.x{i}"))
+        assert score == pytest.approx(0.8)
 
     def test_window_eviction_drops_score(self):
         """
@@ -327,7 +354,7 @@ class TestExtensionExtractor:
         ext = ExtensionExtractor()
         for i in range(_EXTENSION_CEILING + 2):
             ext.score(
-                make_rename(f"/tmp/file{i}.txt", f"/tmp/file{i}.ext{i}", mono_ts=0)
+                make_rename(f"/tmp/file{i}.txt", f"/tmp/file{i}.txt.enc", mono_ts=0)
             )
 
         late_ts = _EXTENSION_WINDOW_NS + 1_000_000_000   # 11 seconds in ns

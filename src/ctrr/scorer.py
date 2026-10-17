@@ -91,6 +91,11 @@ _SOFT_THRESHOLD = 0.35
 # regardless of corpus size or run length. Lowered to 0.65 so a sustained
 # demo attack still requires accumulated evidence (not a single spike) but
 # is reachable. Revisit alongside the policy.yaml weight sweep in Phase 4.
+#
+# UPDATE (B3 fix): the extension sub-score now measures uniformity of one new
+# suffix and reaches 1.0 for such an attack, so the 0.2 cap above no longer
+# applies.  The threshold is deliberately NOT moved with it: it is to be
+# chosen from development-seed runs, not changed because a cap went away.
 _HARD_THRESHOLD = 0.65
 
 # Quorum: at least this many sub-scores must be active (above the signal
