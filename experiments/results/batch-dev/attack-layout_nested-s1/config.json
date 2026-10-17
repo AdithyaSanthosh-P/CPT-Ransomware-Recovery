@@ -1,0 +1,52 @@
+{
+  "kind": "attack",
+  "name": "layout_nested",
+  "seed": 1,
+  "mode": {
+    "rate": "medium",
+    "rename": "fixed",
+    "encrypt": "full",
+    "content": "aes",
+    "layout": "nested"
+  },
+  "split": "dev",
+  "corpus_files": 60,
+  "layout": "nested",
+  "ransomware_family": null,
+  "workload_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "tools/simulate_attack.py",
+    "--target",
+    "/tmp/ctrr-batch/corpus",
+    "--rate",
+    "10.0",
+    "--seed",
+    "1",
+    "--encrypt",
+    "full",
+    "--rename",
+    "fixed",
+    "--content",
+    "aes",
+    "--trace",
+    "experiments/results/batch-dev/attack-layout_nested-s1/trace.jsonl"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-dev/attack-layout_nested-s1/trace.jsonl"
+  ],
+  "git_commit": "38e2532+dirty",
+  "wall_seconds": 12.67,
+  "monitor_cpu_seconds": 2.0,
+  "triggered": true,
+  "snapshots_taken": 1,
+  "snapshot_intact_files": 24
+}

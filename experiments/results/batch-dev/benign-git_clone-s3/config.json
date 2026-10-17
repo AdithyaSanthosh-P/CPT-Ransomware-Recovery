@@ -1,0 +1,35 @@
+{
+  "kind": "benign",
+  "name": "git_clone",
+  "seed": 3,
+  "mode": null,
+  "split": "dev",
+  "corpus_files": 60,
+  "layout": "flat",
+  "ransomware_family": null,
+  "workload_command": [
+    "git",
+    "clone",
+    "-q",
+    "/home/adi/Desktop/Projects/CPTR",
+    "/tmp/ctrr-batch/corpus/git_clone"
+  ],
+  "workload_returncode": 0,
+  "monitor_command": [
+    "/home/adi/Desktop/Projects/CPTR/.venv/bin/python",
+    "-m",
+    "ctrr.monitor",
+    "--watch",
+    "/tmp/ctrr-batch/corpus",
+    "--snapshots",
+    "/tmp/ctrr-batch/snaps",
+    "--trace",
+    "experiments/results/batch-dev/benign-git_clone-s3/trace.jsonl"
+  ],
+  "git_commit": "38e2532+dirty",
+  "wall_seconds": 3.17,
+  "monitor_cpu_seconds": 1.88,
+  "triggered": false,
+  "snapshots_taken": 0,
+  "snapshot_intact_files": null
+}

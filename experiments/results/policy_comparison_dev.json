@@ -1,0 +1,991 @@
+{
+  "command": "python experiments/compare_policies.py --runs results/batch-dev --label dev --model-b logreg",
+  "git_commit": "38e2532",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "split": [
+    "dev"
+  ],
+  "aggregate": {
+    "P0": {
+      "attack_runs": 27,
+      "detected": 6,
+      "detection_rate": 0.222,
+      "median_latency_ms": 5223.0,
+      "median_files_before": 40.5,
+      "median_files_before_pct": 67.5,
+      "benign_runs": 15,
+      "false_triggers": 0
+    },
+    "P1": {
+      "attack_runs": 27,
+      "detected": 27,
+      "detection_rate": 1.0,
+      "median_latency_ms": 2581.6,
+      "median_files_before": 18,
+      "median_files_before_pct": 30.0,
+      "benign_runs": 15,
+      "false_triggers": 3
+    },
+    "P2": {
+      "attack_runs": 27,
+      "detected": 27,
+      "detection_rate": 1.0,
+      "median_latency_ms": 1061.8,
+      "median_files_before": 7,
+      "median_files_before_pct": 11.7,
+      "benign_runs": 15,
+      "false_triggers": 0
+    }
+  },
+  "by_attack_mode": {
+    "baseline": {
+      "P0": "1/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    },
+    "content_napierone": {
+      "P0": "1/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    },
+    "encrypt_alternate": {
+      "P0": "0/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    },
+    "encrypt_head": {
+      "P0": "0/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    },
+    "layout_nested": {
+      "P0": "3/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    },
+    "rate_fast": {
+      "P0": "1/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    },
+    "rate_slow": {
+      "P0": "0/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    },
+    "rename_none": {
+      "P0": "0/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    },
+    "rename_random": {
+      "P0": "0/3",
+      "P1": "3/3",
+      "P2": "3/3"
+    }
+  },
+  "monitor_cpu_fraction_mean": {
+    "attack": 0.16,
+    "benign": 0.578
+  },
+  "runs": [
+    {
+      "run": "attack-baseline-s1",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.15627466456195738,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2575.835037,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 911.55867,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-baseline-s2",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.15785319652722968,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2578.421783,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1066.719604,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-baseline-s3",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.15706393054459353,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 6669.220386,
+        "files_before": 45,
+        "files_before_pct": 75.0
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2585.864849,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 913.538803,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-content_napierone-s1",
+      "kind": "attack",
+      "name": "content_napierone",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.15718799368088468,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2581.509752,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 911.085673,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-content_napierone-s2",
+      "kind": "attack",
+      "name": "content_napierone",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.15785319652722968,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2582.121649,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 912.874479,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-content_napierone-s3",
+      "kind": "attack",
+      "name": "content_napierone",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.1579778830963665,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 7266.539116,
+        "files_before": 49,
+        "files_before_pct": 81.66666666666667
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2578.241253,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 913.010202,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_alternate-s1",
+      "kind": "attack",
+      "name": "encrypt_alternate",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.15615141955835962,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2580.824636,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 915.231719,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_alternate-s2",
+      "kind": "attack",
+      "name": "encrypt_alternate",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.15681639085894405,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2586.57639,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 920.843422,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_alternate-s3",
+      "kind": "attack",
+      "name": "encrypt_alternate",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.15118110236220472,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2574.097524,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1061.82807,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-encrypt_head-s1",
+      "kind": "attack",
+      "name": "encrypt_head",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.15772870662460567,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2578.765009,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 913.644536,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_head-s2",
+      "kind": "attack",
+      "name": "encrypt_head",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.15681639085894405,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2585.94284,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 920.387823,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-encrypt_head-s3",
+      "kind": "attack",
+      "name": "encrypt_head",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.15639810426540285,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2581.613625,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1065.417123,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-layout_nested-s1",
+      "kind": "attack",
+      "name": "layout_nested",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.15785319652722968,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 5297.735625,
+        "files_before": 36,
+        "files_before_pct": 60.0
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2122.345208,
+        "files_before": 15,
+        "files_before_pct": 25.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1061.362005,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-layout_nested-s2",
+      "kind": "attack",
+      "name": "layout_nested",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.15785319652722968,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 5148.339088,
+        "files_before": 35,
+        "files_before_pct": 58.333333333333336
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 1973.063382,
+        "files_before": 14,
+        "files_before_pct": 23.333333333333332
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1067.32564,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-layout_nested-s3",
+      "kind": "attack",
+      "name": "layout_nested",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.15706393054459353,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 4399.379201,
+        "files_before": 30,
+        "files_before_pct": 50.0
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 1973.151673,
+        "files_before": 14,
+        "files_before_pct": 23.333333333333332
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1063.26076,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-rate_fast-s1",
+      "kind": "attack",
+      "name": "rate_fast",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.29289940828402367,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 871.81822,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 310.143028,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_fast-s2",
+      "kind": "attack",
+      "name": "rate_fast",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.2922173274596182,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 873.083392,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 312.887223,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_fast-s3",
+      "kind": "attack",
+      "name": "rate_fast",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.2948148148148148,
+      "P0": {
+        "triggered": true,
+        "latency_ms": 2257.364387,
+        "files_before": 45,
+        "files_before_pct": 75.0
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 879.724593,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 310.473069,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_slow-s1",
+      "kind": "attack",
+      "name": "rate_slow",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.054392167527875984,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 12683.053969,
+        "files_before": 24,
+        "files_before_pct": 40.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3313.202587,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_slow-s2",
+      "kind": "attack",
+      "name": "rate_slow",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.054392167527875984,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 13786.764621,
+        "files_before": 26,
+        "files_before_pct": 43.333333333333336
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3314.850041,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rate_slow-s3",
+      "kind": "attack",
+      "name": "rate_slow",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.053416485900216915,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 12691.132729,
+        "files_before": 24,
+        "files_before_pct": 40.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3312.764466,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-rename_none-s1",
+      "kind": "attack",
+      "name": "rename_none",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.1509433962264151,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4086.784515,
+        "files_before": 28,
+        "files_before_pct": 46.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3181.66127,
+        "files_before": 22,
+        "files_before_pct": 36.666666666666664
+      }
+    },
+    {
+      "run": "attack-rename_none-s2",
+      "kind": "attack",
+      "name": "rename_none",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.15469613259668508,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4239.932926,
+        "files_before": 29,
+        "files_before_pct": 48.333333333333336
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3632.87856,
+        "files_before": 25,
+        "files_before_pct": 41.666666666666664
+      }
+    },
+    {
+      "run": "attack-rename_none-s3",
+      "kind": "attack",
+      "name": "rename_none",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.15622521808088818,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4094.212279,
+        "files_before": 28,
+        "files_before_pct": 46.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 3338.44734,
+        "files_before": 23,
+        "files_before_pct": 38.333333333333336
+      }
+    },
+    {
+      "run": "attack-rename_random-s1",
+      "kind": "attack",
+      "name": "rename_random",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.15785319652722968,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 3937.403307,
+        "files_before": 27,
+        "files_before_pct": 45.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1064.164794,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-rename_random-s2",
+      "kind": "attack",
+      "name": "rename_random",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.15772870662460567,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 4093.775666,
+        "files_before": 28,
+        "files_before_pct": 46.666666666666664
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1066.654739,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-rename_random-s3",
+      "kind": "attack",
+      "name": "rename_random",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.15706393054459353,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 3945.443081,
+        "files_before": 27,
+        "files_before_pct": 45.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1064.249066,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "benign-cp_r-s1",
+      "kind": "benign",
+      "name": "cp_r",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.5981012658227848,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-cp_r-s2",
+      "kind": "benign",
+      "name": "cp_r",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.60062893081761,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-cp_r-s3",
+      "kind": "benign",
+      "name": "cp_r",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.5981012658227848,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-git_clone-s1",
+      "kind": "benign",
+      "name": "git_clone",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.5962145110410094,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-git_clone-s2",
+      "kind": "benign",
+      "name": "git_clone",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.5962145110410094,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-git_clone-s3",
+      "kind": "benign",
+      "name": "git_clone",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.5930599369085173,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-tar_x-s1",
+      "kind": "benign",
+      "name": "tar_x",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.5568513119533527,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-tar_x-s2",
+      "kind": "benign",
+      "name": "tar_x",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.5873493975903614,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-tar_x-s3",
+      "kind": "benign",
+      "name": "tar_x",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.580060422960725,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_flat-s1",
+      "kind": "benign",
+      "name": "unzip_flat",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.5775075987841944,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_flat-s2",
+      "kind": "benign",
+      "name": "unzip_flat",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.5529411764705883,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_flat-s3",
+      "kind": "benign",
+      "name": "unzip_flat",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.5744680851063829,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_multidir-s1",
+      "kind": "benign",
+      "name": "unzip_multidir",
+      "seed": 1,
+      "split": "dev",
+      "cpu_fraction": 0.5410764872521246,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_multidir-s2",
+      "kind": "benign",
+      "name": "unzip_multidir",
+      "seed": 2,
+      "split": "dev",
+      "cpu_fraction": 0.5614035087719298,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "benign-unzip_multidir-s3",
+      "kind": "benign",
+      "name": "unzip_multidir",
+      "seed": 3,
+      "split": "dev",
+      "cpu_fraction": 0.563049853372434,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    }
+  ]
+}

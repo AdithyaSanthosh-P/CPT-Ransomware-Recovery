@@ -1,0 +1,30 @@
+{
+  "train_dir": "results/batch-dev",
+  "excluded_mode": "rename_random",
+  "features": [
+    "rate",
+    "extension",
+    "spread"
+  ],
+  "train_runs": 39,
+  "train_ticks": 3283,
+  "train_positive_ticks": 1440,
+  "train_set_fit": {
+    "logreg": {
+      "precision": 1.0,
+      "recall": 0.858,
+      "f1": 0.924
+    },
+    "tree_depth3": {
+      "precision": 0.988,
+      "recall": 0.877,
+      "f1": 0.929
+    }
+  },
+  "logreg_coefficients_standardised": {
+    "rate": 0.036,
+    "extension": 6.437,
+    "spread": -3.732
+  },
+  "tree": "|--- extension <= 0.10\n|   |--- spread <= 0.10\n|   |   |--- rate <= 0.06\n|   |   |   |--- class: 1\n|   |   |--- rate >  0.06\n|   |   |   |--- class: 0\n|   |--- spread >  0.10\n|   |   |--- class: 0\n|--- extension >  0.10\n|   |--- class: 1\n"
+}

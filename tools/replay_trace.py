@@ -110,6 +110,9 @@ def _load_trace(path: str) -> list[dict]:
     return records
 
 
+MODEL_B_USES_DT = False   # set True if Model B was trained with delta-time as a 4th feature
+
+
 def split_records(records: list[dict]) -> tuple[list[dict], list[dict]]:
     """
     Split a trace into (ticks, markers).
@@ -143,7 +146,45 @@ def label_tick(mono_ts: int, window: tuple[int, int | None] | None) -> str:
     return "attack" if mono_ts >= start and (end is None or mono_ts <= end) else "benign"
 
 
-def replay(records: list[dict], quiet: bool) -> dict:
+# ---------------------------------------------------------------------------
+# Policies (course-plan "Combining the models").  The arbiter is identical in
+# all of them; only what feeds fuse() differs.
+#   P0  Shannon delta + hand-written rate/extension/spread, weights 0.40/0.30/0.15/0.15
+#   P1  Model A probability in the entropy slot, everything else as P0
+#   P2  Model A probability + Model B probability, weights 0.5/0.5.  Model B's
+#       output goes in the rate slot; extension and spread slots are 0 with
+#       weight 0.  The typed quorum therefore reads "Model A active and
+#       Model B active".  The 0.5/0.5 split is a stated choice, not tuned.
+# ---------------------------------------------------------------------------
+POLICIES = ("P0", "P1", "P2")
+_P2_WEIGHTS = {"_WEIGHT_ENTROPY": 0.5, "_WEIGHT_RATE": 0.5,
+               "_WEIGHT_EXTENSION": 0.0, "_WEIGHT_SPREAD": 0.0}
+
+
+def model_a_probs(model_a, records: list[dict]) -> list[float]:
+    """Model A's P(encrypted) for every tick (0.0 where the file was unreadable)."""
+    out = [0.0] * len(records)
+    rows = [(i, r["feat"]) for i, r in enumerate(records) if r.get("feat")]
+    if rows:
+        probs = model_a.predict_proba([f for _, f in rows])[:, 1]
+        for (i, _), p in zip(rows, probs):
+            out[i] = float(p)
+    return out
+
+
+def model_b_probs(model_b, records: list[dict]) -> list[float]:
+    """Model B's P(attack window) from rate/extension/spread (+ optional dt)."""
+    X = []
+    for i, r in enumerate(records):
+        x = [r["rate"], r["extension"], r.get("spread", 0.0)]
+        if MODEL_B_USES_DT:
+            x.append(0.0 if i == 0 else (r["mono_ts"] - records[i - 1]["mono_ts"]) / 1e9)
+        X.append(x)
+    return [float(v) for v in model_b.predict_proba(X)[:, 1]] if X else []
+
+
+def replay(records: list[dict], quiet: bool, policy: str = "P0",
+           model_a=None, model_b=None) -> dict:
     """
     Re-score every tick record through a fresh Scorer.
 
@@ -155,6 +196,26 @@ def replay(records: list[dict], quiet: bool) -> dict:
     the live run's recorded values.
     """
     records, _markers = split_records(records)
+    if policy not in POLICIES:
+        raise ValueError(policy)
+    if policy in ("P1", "P2") and model_a is None:
+        raise ValueError(f"{policy} needs model_a")
+    if policy == "P2" and model_b is None:
+        raise ValueError("P2 needs model_b")
+    saved = {k: getattr(scorer_module, k) for k in _P2_WEIGHTS}
+    if policy == "P2":
+        for k, v in _P2_WEIGHTS.items():
+            setattr(scorer_module, k, v)
+    try:
+        return _replay(records, quiet, policy, model_a, model_b)
+    finally:
+        for k, v in saved.items():
+            setattr(scorer_module, k, v)
+
+
+def _replay(records, quiet, policy, model_a, model_b) -> dict:
+    pa = model_a_probs(model_a, records) if policy in ("P1", "P2") else None
+    pb = model_b_probs(model_b, records) if policy == "P2" else None
     sc = Scorer()
     sequence: list[tuple[str, float, float]] = []
     state_counts: dict[str, int] = {s.value: 0 for s in ArbiterState}
@@ -165,14 +226,16 @@ def replay(records: list[dict], quiet: bool) -> dict:
     prev_state = ArbiterState.NORMAL
 
     for i, rec in enumerate(records):
-        sub = SubScores(
-            entropy=rec["entropy"],
-            rate=rec["rate"],
-            extension=rec["extension"],
+        if policy == "P0":
             # Traces written before Session 12 lack "spread"; 0.0 is what
             # the extractor emits for a flat directory anyway.
-            spread=rec.get("spread", 0.0),
-        )
+            sub = SubScores(entropy=rec["entropy"], rate=rec["rate"],
+                            extension=rec["extension"], spread=rec.get("spread", 0.0))
+        elif policy == "P1":
+            sub = SubScores(entropy=pa[i], rate=rec["rate"],
+                            extension=rec["extension"], spread=rec.get("spread", 0.0))
+        else:
+            sub = SubScores(entropy=pa[i], rate=pb[i])
         # mono_ts from trace; tick() only needs it for cooldown bookkeeping.
         state = sc.tick(sub, mono_ts=rec["mono_ts"])
         state_counts[state.value] = state_counts.get(state.value, 0) + 1
