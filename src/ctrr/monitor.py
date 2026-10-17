@@ -52,6 +52,7 @@ import threading
 from pathlib import Path
 
 from ctrr.extractor import OP_CLOSE_WRITE, ExtractorPipeline, FileEvent
+from ctrr.features import sample_features
 from ctrr.scorer import ArbiterState, Scorer
 from ctrr.snapshot import SnapshotError, make_backend
 from ctrr.watcher import Watcher
@@ -175,6 +176,10 @@ class Monitor:
 
         self._last_state = state
 
+    def _sample_features(self) -> list[float] | None:
+        sample = self._pipeline.entropy_ext.last_sample
+        return sample_features(sample) if sample else None
+
     def _emit_trace(self, event: FileEvent, scores, state: ArbiterState) -> None:
         """Append one JSONL record to the trace file if telemetry is enabled.
 
@@ -201,6 +206,9 @@ class Monitor:
             "accumulator": self._scorer.accumulator,
             "path":        event.path,
             "op":          event.op,
+            # Model A input for this tick (see features.py); None if the file
+            # could not be read.  Lets policies P1/P2 be replayed offline.
+            "feat":        self._sample_features(),
         }
         with self._trace_path.open("a") as fh:
             fh.write(json.dumps(record) + "\n")

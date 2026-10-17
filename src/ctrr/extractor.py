@@ -169,6 +169,10 @@ class EntropyExtractor:
         # Pre-populate via enrol_file() during startup scan.
         self._baseline: dict[str, float] = {}
         self._read_errors: int = 0
+        # Bytes sampled by the most recent score() call (None if unreadable
+        # or not a CLOSE_WRITE).  The monitor hands these to features.py for
+        # the trace, so the file is read once per event, not twice.
+        self.last_sample: bytes | None = None
 
     def enrol_file(self, path: str) -> None:
         """
@@ -187,10 +191,12 @@ class EntropyExtractor:
 
         Side effect: updates the baseline for event.path after scoring.
         """
+        self.last_sample = None
         if event.op != OP_CLOSE_WRITE:
             return 0.0
 
         data = _read_sample(event.path)
+        self.last_sample = data
         if data is None:
             # File vanished or was inaccessible.  Score neutral; log the error.
             self._read_errors += 1
