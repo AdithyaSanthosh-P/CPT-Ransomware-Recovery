@@ -123,8 +123,10 @@ def _prepare_archives(work: Path) -> dict[str, Path]:
     """
     arch = work / "archives"
     done = arch / ".ready"
+    paths = {"flat": arch / "flat.zip", "multidir": arch / "multidir.zip",
+             "large": arch / "large.tar.gz", "copysrc": arch / "copysrc"}
     if done.exists():
-        return {p.stem.split(".")[0]: p for p in arch.glob("*.*") if p.name != ".ready"}
+        return paths
     shutil.rmtree(arch, ignore_errors=True)
     arch.mkdir(parents=True)
     src = work / "archive_src"
@@ -143,8 +145,7 @@ def _prepare_archives(work: Path) -> dict[str, Path]:
                 t.add(p, p.relative_to(src))
     shutil.copytree(src, arch / "copysrc")
     done.touch()
-    return {"flat": arch / "flat.zip", "multidir": arch / "multidir.zip",
-            "large": arch / "large.tar.gz", "copysrc": arch / "copysrc"}
+    return paths
 
 
 def _benign_command(name: str, corpus: Path, arch: dict[str, Path]) -> list[str]:
