@@ -11,6 +11,8 @@ Split by sequence number (seed 20261017): 858 train files, 522 test files (30 he
 | logreg | 1.0 | 0.997 | 0.998 | 0.999 |
 | random_forest | 1.0 | 0.997 | 0.998 | 0.998 |
 
+**Caveat on the 0.998:** the model relies heavily on the file-signature (`magic`) feature, which is the top forest feature (importance 0.434). Without it, F1 falls to 0.974 (forest) and the false-positive rate on benign archives rises from 0.0 to 0.458 (see the ablation below). The score therefore largely reflects that NapierOne's encrypted files lack headers; ransomware that preserves headers would not be covered by this result.
+
 Shannon-delta rule (delta > 0.4 bits/byte vs the original), 310 encrypted files with an original: recall 0.723.
 
 ## Per file type (encrypted copies vs originals of that type)

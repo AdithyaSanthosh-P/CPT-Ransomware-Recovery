@@ -35,17 +35,19 @@ The simulator refuses to run unless the target holds a `.ctrr-test-corpus` file.
 
 ## Results (held-out seeds 4-8, 45 attack runs and 25 benign runs)
 
-| Policy | Detected | Median latency | Median files overwritten before snapshot | False triggers (benign) |
-|---|---|---|---|---|
-| P0: Shannon delta + hand-written scores | 8/45 | 4987 ms | 35 of 60 | 0/25 |
-| P1: Model A in the entropy slot | 45/45 | 2584 ms | 18 of 60 | 3/25 (all `git_clone`) |
-| P2: Model A + Model B, weights 0.5/0.5 | 45/45 | 1063 ms | 7 of 60 | 0/25 |
+| Policy | Detected | Median latency (detected runs) | Median files overwritten, detected runs | Median files overwritten, all attack runs (miss = 60) | False triggers (benign) |
+|---|---|---|---|---|---|
+| P0: Shannon delta + hand-written scores | 8/45 | 4987 ms | 35 of 60 | 60 of 60 | 0/25 |
+| P1: Model A in the entropy slot | 45/45 | 2584 ms | 18 of 60 | 18 of 60 | 3/25 (all `git_clone`) |
+| P2: Model A + Model B, weights 0.5/0.5 | 45/45 | 1063 ms | 7 of 60 | 7 of 60 | 0/25 |
 
-Model A (random forest, split by NapierOne sequence number): F1 0.998 on held-out sequence numbers. The Shannon-delta rule reaches only 0.11 recall on pdf and 0.25 on jpg, because those formats are already high-entropy. Full tables: `experiments/results/model_a.md`.
+Latency and the detected-runs files column are medians over detected runs only, so P0's 35 describes just its 8 detections. The all-runs column and a per-scenario breakdown are in `experiments/results/policy_comparison_heldout_allruns.md` (from `python experiments/summarize_allruns.py --label heldout`, computed from the saved JSON, no re-run). Model B's features are rate, extension and spread only; delta time is not used.
+
+Model A (random forest, split by NapierOne sequence number): F1 0.998 on held-out sequence numbers. **Caveat:** this score leans heavily on the file-signature feature. Without it the forest's false-positive rate on benign archives rises from 0 to 0.46 (F1 0.974), so the 0.998 largely reflects that NapierOne's encrypted files lack file headers, not that content statistics alone separate encryption from compression. The Shannon-delta rule reaches only 0.11 recall on pdf and 0.25 on jpg, because those formats are already high-entropy. Full tables: `experiments/results/model_a.md`.
 
 ## Limits (read before quoting any number)
 
-- **Model A leans on the file-signature feature.** Without it the forest's false-positive rate on benign archives rises from 0 to 0.46 (logistic regression: 1.0). A ransomware that keeps file headers would weaken it. This is why P1 triggers on `git_clone`: pack files have no signature.
+- **Model A leans on the file-signature feature.** Without it the forest's false-positive rate on benign archives rises from 0 to 0.46 (logistic regression: 1.0). A ransomware that keeps file headers would weaken it. P1 triggers on `git_clone` because the signature table in `src/ctrr/features.py` has no entry for git data: pack files do start with a signature (`PACK`) and loose objects are zlib streams (header byte 0x78), but neither is in the table, so they look like headerless high-entropy data to Model A. This is a gap in our table, not a property of git; reported, not fixed.
 - **All attacks are simulated.** Behaviour comes from our simulator (with real NapierOne ciphertext in one mode), not from real ransomware I/O traces. Model B was trained on the simulator's traces, so P2's result shows it separates our simulator from our benign workloads, not that it generalises. Berrueta et al. trace validation is not done.
 - **One corpus size and one machine.** 60-file corpora, one loopback Btrfs image, one ransomware family (RYUK) for the real-ciphertext mode. Within a run the ticks are near-duplicates, so only per-run counts are quoted.
 - **Batch runs use the `copytree` snapshot backend**; Btrfs is exercised by the demo only. "Files overwritten before snapshot" is counted from the trace, not from the snapshot contents.
