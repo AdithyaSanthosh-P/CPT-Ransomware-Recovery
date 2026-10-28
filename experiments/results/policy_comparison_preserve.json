@@ -1,0 +1,353 @@
+{
+  "command": "python experiments/compare_policies.py --runs experiments/results/batch-preserve --label preserve --model-b logreg",
+  "git_commit": "8e3a1fe",
+  "seeds": [
+    9,
+    10,
+    11,
+    12,
+    13
+  ],
+  "split": [
+    "heldout"
+  ],
+  "aggregate": {
+    "P0": {
+      "attack_runs": 15,
+      "detected": 0,
+      "detection_rate": 0.0,
+      "median_latency_ms": null,
+      "median_files_before": null,
+      "median_files_before_pct": null,
+      "benign_runs": 0,
+      "false_triggers": 0
+    },
+    "P1": {
+      "attack_runs": 15,
+      "detected": 5,
+      "detection_rate": 0.333,
+      "median_latency_ms": 2568.7,
+      "median_files_before": 18,
+      "median_files_before_pct": 30.0,
+      "benign_runs": 0,
+      "false_triggers": 0
+    },
+    "P2": {
+      "attack_runs": 15,
+      "detected": 5,
+      "detection_rate": 0.333,
+      "median_latency_ms": 909.2,
+      "median_files_before": 7,
+      "median_files_before_pct": 11.7,
+      "benign_runs": 0,
+      "false_triggers": 0
+    }
+  },
+  "by_attack_mode": {
+    "baseline": {
+      "P0": "0/5",
+      "P1": "5/5",
+      "P2": "5/5"
+    },
+    "preserve_16": {
+      "P0": "0/5",
+      "P1": "0/5",
+      "P2": "0/5"
+    },
+    "preserve_4096": {
+      "P0": "0/5",
+      "P1": "0/5",
+      "P2": "0/5"
+    }
+  },
+  "monitor_cpu_fraction_mean": {
+    "attack": 0.151
+  },
+  "runs": [
+    {
+      "run": "attack-baseline-s10",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 10,
+      "split": "heldout",
+      "cpu_fraction": 0.15213946117274169,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2570.088417,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 909.246471,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-baseline-s11",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 11,
+      "split": "heldout",
+      "cpu_fraction": 0.15213946117274169,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2568.663641,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1056.228574,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-baseline-s12",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 12,
+      "split": "heldout",
+      "cpu_fraction": 0.14858490566037735,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2570.864371,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 906.25964,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-baseline-s13",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 13,
+      "split": "heldout",
+      "cpu_fraction": 0.15213946117274169,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2568.487203,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 1058.328574,
+        "files_before": 8,
+        "files_before_pct": 13.333333333333334
+      }
+    },
+    {
+      "run": "attack-baseline-s9",
+      "kind": "attack",
+      "name": "baseline",
+      "seed": 9,
+      "split": "heldout",
+      "cpu_fraction": 0.15134706814580032,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": true,
+        "latency_ms": 2567.492944,
+        "files_before": 18,
+        "files_before_pct": 30.0
+      },
+      "P2": {
+        "triggered": true,
+        "latency_ms": 906.695711,
+        "files_before": 7,
+        "files_before_pct": 11.666666666666666
+      }
+    },
+    {
+      "run": "attack-preserve_16-s10",
+      "kind": "attack",
+      "name": "preserve_16",
+      "seed": 10,
+      "split": "heldout",
+      "cpu_fraction": 0.15213946117274169,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_16-s11",
+      "kind": "attack",
+      "name": "preserve_16",
+      "seed": 11,
+      "split": "heldout",
+      "cpu_fraction": 0.1520190023752969,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_16-s12",
+      "kind": "attack",
+      "name": "preserve_16",
+      "seed": 12,
+      "split": "heldout",
+      "cpu_fraction": 0.1520190023752969,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_16-s13",
+      "kind": "attack",
+      "name": "preserve_16",
+      "seed": 13,
+      "split": "heldout",
+      "cpu_fraction": 0.15122723673792557,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_16-s9",
+      "kind": "attack",
+      "name": "preserve_16",
+      "seed": 9,
+      "split": "heldout",
+      "cpu_fraction": 0.15189873417721517,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_4096-s10",
+      "kind": "attack",
+      "name": "preserve_4096",
+      "seed": 10,
+      "split": "heldout",
+      "cpu_fraction": 0.15213946117274169,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_4096-s11",
+      "kind": "attack",
+      "name": "preserve_4096",
+      "seed": 11,
+      "split": "heldout",
+      "cpu_fraction": 0.14846818538884524,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_4096-s12",
+      "kind": "attack",
+      "name": "preserve_4096",
+      "seed": 12,
+      "split": "heldout",
+      "cpu_fraction": 0.1520190023752969,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_4096-s13",
+      "kind": "attack",
+      "name": "preserve_4096",
+      "seed": 13,
+      "split": "heldout",
+      "cpu_fraction": 0.15110759493670886,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    },
+    {
+      "run": "attack-preserve_4096-s9",
+      "kind": "attack",
+      "name": "preserve_4096",
+      "seed": 9,
+      "split": "heldout",
+      "cpu_fraction": 0.15110759493670886,
+      "P0": {
+        "triggered": false
+      },
+      "P1": {
+        "triggered": false
+      },
+      "P2": {
+        "triggered": false
+      }
+    }
+  ]
+}
