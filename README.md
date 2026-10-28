@@ -10,8 +10,10 @@ This is a course project (final-year project, demo scope). It does not use proce
 
 ## Run it
 
+The frozen models behind every result are committed in `experiments/data/models/` (pickled with scikit-learn 1.9.1 and joblib 1.6.0; another scikit-learn version may refuse to load them or warn). NapierOne and Berrueta data are not committed: `tools/fetch_napierone.py` downloads NapierOne, and the Berrueta text files come from IEEE DataPort (DOI 10.21227/qnyn-q136, free account).
+
     python -m venv .venv && source .venv/bin/activate && pip install -e '.[experiments]'
-    pytest                                                      # 134 tests
+    pytest                                                      # 140 tests
 
     # real Btrfs (loopback image, needs sudo once): sudo bash deploy/setup_btrfs.sh up
     python -m ctrr.monitor --backend btrfs --watch /mnt/ctrr/data --snapshots /mnt/ctrr/.snapshots --trace trace.jsonl
@@ -82,4 +84,4 @@ Commands: `python tools/run_batch.py --split heldout2 --only attack:baseline att
     experiments/     model_a, model_b, compare_policies, bench_entropy, results/
     deploy/          Btrfs loopback setup, root-owned snapshot helper, sudoers rule
     demo_scripts/    unattended demos
-    tests/           134 tests
+    tests/           140 tests
