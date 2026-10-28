@@ -107,3 +107,6 @@ policy_override.yaml
 
 /docs
 /demo_ui/
+
+# Claude Code guidance
+/CLAUDE.md
