@@ -18,7 +18,8 @@
 #   attack-baseline-s1, attack-layout_nested-s1, benign-unzip_flat-s1
 # =============================================================================
 set -uo pipefail
-PROJECT_ROOT="/home/adi/Desktop/Projects/CPTR"
+# Repo root, found from this script's own location so a fresh clone works anywhere.
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT" || exit 1
 source .venv/bin/activate
 

@@ -1,7 +1,7 @@
 # CTRR demo scripts
 
-Before anything else, edit `PROJECT_ROOT` at the top of each script if your
-checkout isn't at `/home/adi/Desktop/Projects/CPTR`.
+Each script finds the repo root from its own location, so a fresh clone works
+from any path.
 
 ## Main end-to-end demo (Section 0)
 

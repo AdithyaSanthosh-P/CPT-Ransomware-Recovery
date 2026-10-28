@@ -19,7 +19,8 @@
 # out if asked "isn't this just ML with extra steps?"
 # =============================================================================
 set -uo pipefail
-PROJECT_ROOT="/home/adi/Desktop/Projects/CPTR"
+# Repo root, found from this script's own location so a fresh clone works anywhere.
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$PROJECT_ROOT" || { echo "Set PROJECT_ROOT at the top of this script."; exit 1; }
 
 python -c "

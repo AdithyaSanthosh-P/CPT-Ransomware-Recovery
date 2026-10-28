@@ -24,7 +24,8 @@
 # =============================================================================
 set -uo pipefail
 
-PROJECT_ROOT="/home/adi/Desktop/Projects/CPTR"
+# Repo root, found from this script's own location so a fresh clone works anywhere.
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CORPUS=/tmp/test-corpus
 SNAPS=/tmp/ctrr-snaps
 TRACE=/tmp/ctrr-trace.jsonl
