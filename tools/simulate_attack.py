@@ -15,6 +15,9 @@ demo attack exactly):
   --content  aes | napierone           self-generated AES, or the bytes of a
                                        real ransomware-encrypted NapierOne file
   --seed N                             file order and random suffixes
+  --preserve N                         leave the first N bytes of each file
+                                       plaintext (header-preserving, Cerber
+                                       style); full AES encryption only
 
 The simulator is intentionally slow enough for the monitor to observe the
 signal build-up (NORMAL -> SUSPECT -> TRIGGER) before all files are encrypted.
@@ -181,7 +184,7 @@ def _new_name(path: Path, rename: str, rng: random.Random) -> Path:
 
 def _encrypt_file(path: Path, encrypt: str = "full", rename: str = "fixed",
                   content: str = "aes", cipher_index: dict | None = None,
-                  rng: random.Random | None = None) -> tuple[Path, bool]:
+                  rng: random.Random | None = None, preserve: int = 0) -> tuple[Path, bool]:
     """
     Overwrite path with ciphertext according to the mode, then rename it.
 
@@ -209,7 +212,14 @@ def _encrypt_file(path: Path, encrypt: str = "full", rename: str = "fixed",
         ciphertext = cipher_index[key].read_bytes()
         real = True
     elif encrypt == "full":
-        ciphertext = _encrypt_bytes(plaintext)
+        # preserve > 0: the first `preserve` bytes stay plaintext, so the file
+        # signature survives (Cerber-style header preservation; Berrueta et
+        # al. report that Cerber leaves the leading bytes alone but not how
+        # many, so the length is a modelling choice).  A file shorter than
+        # `preserve` is left entirely unencrypted, as the preserve window
+        # covers it.
+        ciphertext = plaintext[:preserve] + _encrypt_bytes(plaintext[preserve:]) \
+            if preserve else _encrypt_bytes(plaintext)
     else:
         ciphertext = _partial_ciphertext(plaintext, encrypt)
     path.write_bytes(ciphertext)
@@ -260,7 +270,8 @@ def _write_marker(trace: Path | None, event: str, **fields) -> None:
 def simulate(target: Path, rate: float, verbose: bool,
              trace: Path | None = None, encrypt: str = "full",
              rename: str = "fixed", content: str = "aes",
-             cipher_dir: Path | None = None, seed: int = 0) -> None:
+             cipher_dir: Path | None = None, seed: int = 0,
+             preserve: int = 0) -> None:
     """
     Encrypt files in target at the specified rate (files per second).
 
@@ -291,7 +302,8 @@ def simulate(target: Path, rate: float, verbose: bool,
 
     print(f"[ATTACK_START] target={target}  files={len(files)}  rate={rate} fps")
     _write_marker(trace, "ATTACK_START", files=len(files), rate=rate,
-                  encrypt=encrypt, rename=rename, content=content, seed=seed)
+                  encrypt=encrypt, rename=rename, content=content, seed=seed,
+                  preserve=preserve)
 
     interval = (1.0 / rate) if rate > 0 else 0.0
     encrypted = 0
@@ -306,7 +318,7 @@ def simulate(target: Path, rate: float, verbose: bool,
 
         try:
             enc_path, real = _encrypt_file(path, encrypt, rename, content,
-                                           cipher_index, rng)
+                                           cipher_index, rng, preserve)
             encrypted += 1
             real_count += real
             if verbose:
@@ -353,6 +365,9 @@ def _parse_args(argv=None):
     p.add_argument("--cipher-dir", default=None, metavar="DIR",
                    help="A NapierOne ransomware family directory, e.g."
                         " experiments/data/napierone/RYUK")
+    p.add_argument("--preserve", type=int, default=0, metavar="N",
+                   help="Keep the first N bytes of each file unencrypted (default 0;"
+                        " needs --encrypt full and --content aes)")
     p.add_argument("--seed", type=int, default=0,
                    help="File order and random suffixes (0 = sorted order)")
     p.add_argument(
@@ -360,7 +375,10 @@ def _parse_args(argv=None):
         help="Append ATTACK_START / ATTACK_END ground-truth markers to this JSONL"
              " file (normally the same file the monitor writes with --trace)",
     )
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    if args.preserve and (args.encrypt != "full" or args.content != "aes"):
+        p.error("--preserve needs --encrypt full and --content aes")
+    return args
 
 
 if __name__ == "__main__":
@@ -369,4 +387,4 @@ if __name__ == "__main__":
              trace=Path(args.trace) if args.trace else None,
              encrypt=args.encrypt, rename=args.rename, content=args.content,
              cipher_dir=Path(args.cipher_dir) if args.cipher_dir else None,
-             seed=args.seed)
+             seed=args.seed, preserve=args.preserve)

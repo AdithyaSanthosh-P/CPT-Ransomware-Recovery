@@ -57,10 +57,15 @@ RESULTS = ROOT / "experiments" / "results" / "batch"   # overridable: --results-
 NAPIERONE = ROOT / "experiments" / "data" / "napierone"
 CORPUS_FILES = 60
 DEV_SEEDS, HELDOUT_SEEDS = (1, 2, 3), (4, 5, 6, 7, 8)
+# Second held-out set, used once for the header-preserving modes (preserve_*)
+# and a baseline control on the same seeds.  Seeds 4-8 were already spent on
+# the models and policies, so these runs use new seeds instead.
+HELDOUT2_SEEDS = (9, 10, 11, 12, 13)
+_ALL_HELDOUT = HELDOUT_SEEDS + HELDOUT2_SEEDS
 _SETTLE_S = 3          # let the monitor drain its queue after the workload
 
 _RATES = {"slow": 2.0, "medium": 10.0, "fast": 0.0}
-_BASE = dict(rate="medium", rename="fixed", encrypt="full", content="aes", layout="flat")
+_BASE = dict(rate="medium", rename="fixed", encrypt="full", content="aes", layout="flat", preserve=0)
 ATTACKS = {
     "baseline":          {},
     "rate_slow":         {"rate": "slow"},
@@ -71,6 +76,11 @@ ATTACKS = {
     "encrypt_alternate": {"encrypt": "alternate"},
     "content_napierone": {"content": "napierone"},
     "layout_nested":     {"layout": "nested"},
+    # Header-preserving (Cerber-style): first N bytes stay plaintext.  16 keeps
+    # every signature in features.py; 4096 keeps the whole 4 KiB head sample.
+    # Lengths fixed before any run (Cerber's real value is not documented).
+    "preserve_16":       {"preserve": 16},
+    "preserve_4096":     {"preserve": 4096},
 }
 BENIGN = ("unzip_flat", "unzip_multidir", "tar_x", "git_clone", "cp_r")
 
@@ -173,7 +183,7 @@ def run_one(kind: str, name: str, seed: int, work: Path,
     run_dir = RESULTS / f"{kind}-{name}-s{seed}"
     if (run_dir / "config.json").exists() and not force:
         return "skipped (already done)"
-    if seed in HELDOUT_SEEDS and run_dir.exists() and not force:
+    if seed in _ALL_HELDOUT and run_dir.exists() and not force:
         return "REFUSED: held-out seed already has partial output; use --force"
     shutil.rmtree(run_dir, ignore_errors=True)
     run_dir.mkdir(parents=True)
@@ -207,7 +217,8 @@ def run_one(kind: str, name: str, seed: int, work: Path,
                 cmd = [sys.executable, "tools/simulate_attack.py", "--target", str(corpus),
                        "--rate", str(_RATES[attack["rate"]]), "--seed", str(seed),
                        "--encrypt", attack["encrypt"], "--rename", attack["rename"],
-                       "--content", attack["content"], "--trace", str(trace)]
+                       "--content", attack["content"], "--trace", str(trace),
+                       "--preserve", str(attack["preserve"])]
                 if pair:
                     cmd += ["--cipher-dir", str(pair)]
                 rc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True).returncode
@@ -229,7 +240,7 @@ def run_one(kind: str, name: str, seed: int, work: Path,
     snap_dirs = sorted(snaps.glob("*_trigger")) if snaps.exists() else []
     config = {
         "kind": kind, "name": name, "seed": seed,
-        "mode": attack, "split": "heldout" if seed in HELDOUT_SEEDS else "dev",
+        "mode": attack, "split": "heldout" if seed in _ALL_HELDOUT else "dev",
         "corpus_files": len(manifest), "layout": layout,
         "ransomware_family": _FAMILY if pair else None,
         "workload_command": cmd, "workload_returncode": rc,
@@ -250,7 +261,7 @@ def run_one(kind: str, name: str, seed: int, work: Path,
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     g = ap.add_mutually_exclusive_group(required=True)
-    g.add_argument("--split", choices=("dev", "heldout"))
+    g.add_argument("--split", choices=("dev", "heldout", "heldout2"))
     g.add_argument("--seeds", type=int, nargs="+")
     ap.add_argument("--only", nargs="+", metavar="KIND:NAME",
                     help="e.g. attack:baseline benign:git_clone (default: everything)")
@@ -263,7 +274,8 @@ def main(argv=None) -> None:
     if a.results_dir:
         RESULTS = a.results_dir
 
-    seeds = (DEV_SEEDS if a.split == "dev" else HELDOUT_SEEDS) if a.split else tuple(a.seeds)
+    seeds = ({"dev": DEV_SEEDS, "heldout": HELDOUT_SEEDS, "heldout2": HELDOUT2_SEEDS}[a.split]
+             if a.split else tuple(a.seeds))
     plan = [("attack", n) for n in ATTACKS] + [("benign", n) for n in BENIGN]
     if a.only:
         plan = [p for p in plan if f"{p[0]}:{p[1]}" in a.only]

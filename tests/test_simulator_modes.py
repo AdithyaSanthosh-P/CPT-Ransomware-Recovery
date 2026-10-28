@@ -41,6 +41,21 @@ class TestEncryptModes:
         assert data[sim._PARTIAL_CHUNK:] == b"A" * (64 * 1024 - sim._PARTIAL_CHUNK)
         assert data[:sim._PARTIAL_CHUNK] != b"A" * sim._PARTIAL_CHUNK
 
+    def test_preserve_keeps_leading_bytes_and_length(self, tmp_path):
+        new, _ = sim._encrypt_file(_file(tmp_path), "full", "none", preserve=16)
+        data = new.read_bytes()
+        assert len(data) == 64 * 1024
+        assert data[:16] == b"A" * 16 and data[16:32] != b"A" * 16
+
+    def test_preserve_longer_than_file_leaves_it_unencrypted(self, tmp_path):
+        p = _file(tmp_path, size=1000)
+        new, _ = sim._encrypt_file(p, "full", "none", preserve=4096)
+        assert new.read_bytes() == b"A" * 1000
+
+    def test_preserve_rejected_with_partial_modes(self):
+        with pytest.raises(SystemExit):
+            sim._parse_args(["--target", "/x", "--encrypt", "head", "--preserve", "16"])
+
     def test_alternate_encrypts_even_chunks_only(self, tmp_path):
         new, _ = sim._encrypt_file(_file(tmp_path), "alternate", "none")
         data, c = new.read_bytes(), sim._PARTIAL_CHUNK
